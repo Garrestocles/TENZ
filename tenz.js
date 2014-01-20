@@ -7,7 +7,7 @@
     //var	KEYCODE_LEFT = 37; //left arrow
     //var	KEYCODE_RIGHT = 39; //right arrow
 
-    function MapObj() {
+    function MapProto() {
         this.container = new createjs.Container();
         this.width = 2000;
         this.height = 1000;
@@ -16,11 +16,49 @@
 
         this.tiles = new Array(this.width / this.tileSize); //currently 100
         for (var i = 0; i <= this.width / this.tileSize; i++)
-        this.tiles[i] = new Array(this.height / this.tileSize); //currently 50
+            this.tiles[i] = new Array(this.height / this.tileSize); //currently 50
+
+        this.rooms = new Array();
 
 
     }
-    var map = new MapObj();
+    var map = new MapProto();
+
+    function getRandomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1) + min);
+    }
+
+    function RoomProto(){
+
+        this.roomTLCornerX = getRandomInt(0,map.tiles.length-7);
+        this.roomTLCornerY = getRandomInt(0,map.tiles[0].length-7);
+        var maxWidth, maxHeight;
+
+        if(this.roomTLCornerX > map.tiles.length - 25){
+            maxWidth = map.tiles.length - this.roomTLCornerX;
+        } else maxWidth = 25;
+        if(this.roomTLCornerY > map.tiles[0].length - 25){
+            maxHeight = map.tiles[0].length - this.roomTLCornerY;
+        } else maxHeight = 25;
+
+        var roomWidth = getRandomInt(5,maxWidth);
+        var roomHeight = getRandomInt(5,maxHeight);
+
+        //console.log("roomTLCornerX: "+roomTLCornerX + " roomTLCornerY: " + roomTLCornerY +" width: "+ roomWidth + " height " + roomHeight);
+
+        for(var x = 0; x < map.tiles.length; x++){
+            for (var y = 0; y < map.tiles[x].length; y++){
+                if (x >= this.roomTLCornerX && x <= this.roomTLCornerX + roomWidth && y >= this.roomTLCornerY && y <= this.roomTLCornerY + roomHeight ){
+                    //console.log("Outer IF X: " + x + " Y: " + y);
+                    if ( x == this.roomTLCornerX || x == this.roomTLCornerX + roomWidth || y == this.roomTLCornerY || y == this.roomTLCornerY + roomHeight ){
+                        //console.log("Inner IF X: " + x + " Y: " + y);
+                        map.tiles[x][y] = new tileObjs.wall();
+                    }else map.tiles[x][y] = new tileObjs.floor();
+                }//else map.tiles[x][y] = undefined;
+            }
+        }
+
+    }
 
     var tileObjs = {
         floor: function () {
@@ -62,26 +100,42 @@
             var tilex = Math.round(x / 20);
             var tiley = Math.round(y / 20);
 
-
-              return {
-                    tile: map.tiles[tilex][tiley],
-                    x: tilex,
-                    y: tiley
-                };  
+            return {
+                tile: map.tiles[tilex][tiley],
+                x: tilex,
+                y: tiley
+            };  
             
         };
 
         this.update = function () {
             var prevX = this.sprite.x;
             var prevY = this.sprite.y;
-            if (this.keysPressed[RIGHT_KEY_CODE]) this.sprite.x += 2;
-            if (this.keysPressed[LEFT_KEY_CODE]) this.sprite.x -= 2;
-            if (this.keysPressed[UP_KEY_CODE]) this.sprite.y -= 2;
-            if (this.keysPressed[DOWN_KEY_CODE]) this.sprite.y += 2;
+            var mapPrevX = map.container.x;
+            var mapPrevY = map.container.y;
+
+            if (this.keysPressed[RIGHT_KEY_CODE]){
+               this.sprite.x += 2; 
+               map.container.x -= 2;
+            } 
+            if (this.keysPressed[LEFT_KEY_CODE]){
+                this.sprite.x -= 2;
+                map.container.x += 2;
+            } 
+            if (this.keysPressed[UP_KEY_CODE]) {
+                this.sprite.y -= 2;
+                map.container.y += 2;
+            }
+            if (this.keysPressed[DOWN_KEY_CODE]) {
+                this.sprite.y += 2;
+                map.container.y -= 2;
+            }
             if (currentTile(this.sprite.x, this.sprite.y).tile !== undefined)
             if (!currentTile(this.sprite.x, this.sprite.y).tile.isPassable) {
                 this.sprite.x = prevX;
                 this.sprite.y = prevY;
+                map.container.x = mapPrevX;
+                map.container.y = mapPrevY;
             }
         };
     }
@@ -106,49 +160,23 @@
         buildmap();
 
         var player = new Player();
-
         map.container.addChild(player.sprite);
+        map.container.x += Math.floor(VIEW_WIDTH/2) - player.sprite.x - 15;
+        map.container.y += Math.floor(VIEW_HEIGHT/2) - player.sprite.y - 15;
+        
 
         document.addEventListener('keydown', keyDown, false);
         document.addEventListener('keyup', keyUp, false);
 
         stage.addChild(map.container);
+        
 
         function buildmaparray() {
 
-            //Draw a room
-            function getRandomInt(min, max) {
-              return Math.floor(Math.random() * (max - min + 1) + min);
-            }
-
-            var roomTLCornerX = getRandomInt(0,map.tiles.length-75);
-            var roomTLCornerY = getRandomInt(0,map.tiles[0].length-30);
-            var maxWidth, maxHeight;
-
-            if(roomTLCornerX > map.tiles.length - 25){
-                maxWidth = map.tiles.length - roomTLCornerX;
-            } else maxWidth = 25;
-            if(roomTLCornerY > map.tiles[0].length - 25){
-                maxHeight = map.tiles[0].length - roomTLCornerY;
-            } else maxHeight = 25;
-
-            var roomWidth = getRandomInt(5,maxWidth);
-            var roomHeight = getRandomInt(5,maxHeight);
-
-            console.log("roomTLCornerX: "+roomTLCornerX + " roomTLCornerY: " + roomTLCornerY +" width: "+ roomWidth + " height " + roomHeight);
-
-            for(var x = 0; x < map.tiles.length; x++){
-                for (var y = 0; y < map.tiles[x].length; y++){
-                    if (x >= roomTLCornerX && x <= roomTLCornerX + roomWidth && y >= roomTLCornerY && y <= roomTLCornerY + roomHeight ){
-                        console.log("Outer IF X: " + x + " Y: " + y);
-                        if ( x == roomTLCornerX || x == roomTLCornerX + roomWidth || y == roomTLCornerY || y == roomTLCornerY + roomHeight ){
-                            console.log("Inner IF X: " + x + " Y: " + y);
-                            map.tiles[x][y] = new tileObjs.wall();
-                        }else map.tiles[x][y] = new tileObjs.floor();
-                    }else map.tiles[x][y] = undefined;
-                }
-            }
-
+            map.rooms[0] = new RoomProto();
+            map.rooms[1] = new RoomProto();
+            map.rooms[2] = new RoomProto();
+            map.rooms[3] = new RoomProto();
         }
 
         function buildmap() {
@@ -166,6 +194,7 @@
         }
 
         function tick(event) {
+
 
             player.update();
             stage.update();
