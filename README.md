@@ -1,4 +1,4 @@
 TENZ
 ====
 
-A procedurally generated dungeon crawler...in JavaScript!
+Don't look at it yet.  It's not nearly done enough...
