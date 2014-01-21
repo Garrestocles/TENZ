@@ -34,10 +34,10 @@
         this.roomTLCornerY = getRandomInt(0,map.tiles[0].length-7);
         var maxWidth, maxHeight;
 
-        if(this.roomTLCornerX > map.tiles.length - 25){
+        if(this.roomTLCornerX > map.tiles.length - 26){
             maxWidth = map.tiles.length - this.roomTLCornerX;
         } else maxWidth = 25;
-        if(this.roomTLCornerY > map.tiles[0].length - 25){
+        if(this.roomTLCornerY > map.tiles[0].length - 26){
             maxHeight = map.tiles[0].length - this.roomTLCornerY;
         } else maxHeight = 25;
 
@@ -186,30 +186,32 @@
             map.rooms[1] = new RoomProto();
             map.rooms[2] = new RoomProto();
             map.rooms[3] = new RoomProto();
-            makeCorridor(Math.floor(map.rooms[0].roomTLCornerX+map.rooms[0].roomWidth/2),Math.floor(map.rooms[0].roomTLCornerY+map.rooms[0].roomHeight/2),Math.floor(map.rooms[1].roomTLCornerX+map.rooms[0].roomWidth/2),Math.floor(map.rooms[1].roomTLCornerY+map.rooms[1].roomHeight/2));
+            makeCorridor(Math.floor(map.rooms[0].roomTLCornerX+map.rooms[0].roomWidth/2),Math.floor(map.rooms[0].roomTLCornerY+map.rooms[0].roomHeight/2),Math.floor(map.rooms[1].roomTLCornerX+map.rooms[1].roomWidth/2),Math.floor(map.rooms[1].roomTLCornerY+map.rooms[1].roomHeight/2));
             makeCorridor(Math.floor(map.rooms[1].roomTLCornerX+map.rooms[1].roomWidth/2),Math.floor(map.rooms[1].roomTLCornerY+map.rooms[1].roomHeight/2),Math.floor(map.rooms[2].roomTLCornerX+map.rooms[2].roomWidth/2),Math.floor(map.rooms[2].roomTLCornerY+map.rooms[2].roomHeight/2));
             makeCorridor(Math.floor(map.rooms[3].roomTLCornerX+map.rooms[3].roomWidth/2),Math.floor(map.rooms[3].roomTLCornerY+map.rooms[3].roomHeight/2),Math.floor(map.rooms[2].roomTLCornerX+map.rooms[2].roomWidth/2),Math.floor(map.rooms[2].roomTLCornerY+map.rooms[2].roomHeight/2));
 
             function makeCorridor(startx,starty,endx,endy){
-                map.tiles[startx][starty] = new tileProtos.Floor();
-                map.tiles[endx][endy] = new tileProtos.Floor();
+                //map.tiles[startx][starty] = new tileProtos.Floor();
+                //map.tiles[endx][endy] = new tileProtos.Floor();
                 var r;
 
+                console.log("values:" + startx +","+starty+" to " + endx + ":" + endy);
+
                 if(startx < endx){
-                    for(r = startx; r < endx + 1; r++){
+                    for(r = startx; r <= endx; r++){
                         map.tiles[r][starty] = new tileProtos.Floor();
                     }
                 }else {
-                   for(r = endx; r < startx + 1; r++){
-                        map.tiles[r][endy] = new tileProtos.Floor();
+                   for(r = endx; r <= startx; r++){
+                        map.tiles[r][starty] = new tileProtos.Floor();
                     } 
                 }
                 if(starty < endy){
-                    for(r = starty; r < endy + 1; r++){
-                        map.tiles[startx][r] = new tileProtos.Floor();
+                    for(r = starty; r <= endy; r++){
+                        map.tiles[endx][r] = new tileProtos.Floor();
                     }
                 }else {
-                   for(r = endy; r < starty + 1; r++){
+                   for(r = endy; r <= starty; r++){
                         map.tiles[endx][r] = new tileProtos.Floor();
                     } 
                 }
