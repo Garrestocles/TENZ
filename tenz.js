@@ -41,37 +41,37 @@
             maxHeight = map.tiles[0].length - this.roomTLCornerY;
         } else maxHeight = 25;
 
-        var roomWidth = getRandomInt(5,maxWidth);
-        var roomHeight = getRandomInt(5,maxHeight);
+        this.roomWidth = getRandomInt(5,maxWidth);
+        this.roomHeight = getRandomInt(5,maxHeight);
 
         //console.log("roomTLCornerX: "+roomTLCornerX + " roomTLCornerY: " + roomTLCornerY +" width: "+ roomWidth + " height " + roomHeight);
 
         for(var x = 0; x < map.tiles.length; x++){
             for (var y = 0; y < map.tiles[x].length; y++){
-                if (x >= this.roomTLCornerX && x <= this.roomTLCornerX + roomWidth && y >= this.roomTLCornerY && y <= this.roomTLCornerY + roomHeight ){
+                if (x >= this.roomTLCornerX && x <= this.roomTLCornerX + this.roomWidth && y >= this.roomTLCornerY && y <= this.roomTLCornerY + this.roomHeight ){
                     //console.log("Outer IF X: " + x + " Y: " + y);
-                    if ( x == this.roomTLCornerX || x == this.roomTLCornerX + roomWidth || y == this.roomTLCornerY || y == this.roomTLCornerY + roomHeight ){
+                    if ( x == this.roomTLCornerX || x == this.roomTLCornerX + this.roomWidth || y == this.roomTLCornerY || y == this.roomTLCornerY + this.roomHeight ){
                         //console.log("Inner IF X: " + x + " Y: " + y);
-                        map.tiles[x][y] = new tileObjs.wall();
-                    }else map.tiles[x][y] = new tileObjs.floor();
+                        map.tiles[x][y] = new tileProtos.Wall();
+                    }else map.tiles[x][y] = new tileProtos.Floor();
                 }//else map.tiles[x][y] = undefined;
             }
         }
 
     }
 
-    var tileObjs = {
-        floor: function () {
+    var tileProtos = {
+        Floor: function () {
             this.name = "floor";
             this.isPassable = true;
             this.image = new createjs.Bitmap("sprite_sheets/floor.png");
         },
-        wall: function () {
+        Wall: function () {
             this.name = "wall";
             this.isPassable = false;
             this.image = new createjs.Bitmap("sprite_sheets/wall.png");
         },
-        blank: function () {
+        Blank: function () {
             this.name = "thevoid";
             this.isPassable = false;
             this.image = null;
@@ -137,6 +137,12 @@
                 map.container.x = mapPrevX;
                 map.container.y = mapPrevY;
             }
+            if (currentTile(this.sprite.x, this.sprite.y).tile === undefined){
+                this.sprite.x = prevX;
+                this.sprite.y = prevY;
+                map.container.x = mapPrevX;
+                map.container.y = mapPrevY;
+            }
         };
     }
     Actor.prototype = new GameObject();
@@ -160,6 +166,9 @@
         buildmap();
 
         var player = new Player();
+        player.sprite.x = map.rooms[0].roomTLCornerX*map.tileSize + 30;
+        player.sprite.y = map.rooms[0].roomTLCornerY*map.tileSize + 30;
+
         map.container.addChild(player.sprite);
         map.container.x += Math.floor(VIEW_WIDTH/2) - player.sprite.x - 15;
         map.container.y += Math.floor(VIEW_HEIGHT/2) - player.sprite.y - 15;
@@ -177,6 +186,34 @@
             map.rooms[1] = new RoomProto();
             map.rooms[2] = new RoomProto();
             map.rooms[3] = new RoomProto();
+            makeCorridor(Math.floor(map.rooms[0].roomTLCornerX+map.rooms[0].roomWidth/2),Math.floor(map.rooms[0].roomTLCornerY+map.rooms[0].roomHeight/2),Math.floor(map.rooms[1].roomTLCornerX+map.rooms[0].roomWidth/2),Math.floor(map.rooms[1].roomTLCornerY+map.rooms[1].roomHeight/2));
+            makeCorridor(Math.floor(map.rooms[1].roomTLCornerX+map.rooms[1].roomWidth/2),Math.floor(map.rooms[1].roomTLCornerY+map.rooms[1].roomHeight/2),Math.floor(map.rooms[2].roomTLCornerX+map.rooms[2].roomWidth/2),Math.floor(map.rooms[2].roomTLCornerY+map.rooms[2].roomHeight/2));
+            makeCorridor(Math.floor(map.rooms[3].roomTLCornerX+map.rooms[3].roomWidth/2),Math.floor(map.rooms[3].roomTLCornerY+map.rooms[3].roomHeight/2),Math.floor(map.rooms[2].roomTLCornerX+map.rooms[2].roomWidth/2),Math.floor(map.rooms[2].roomTLCornerY+map.rooms[2].roomHeight/2));
+
+            function makeCorridor(startx,starty,endx,endy){
+                map.tiles[startx][starty] = new tileProtos.Floor();
+                map.tiles[endx][endy] = new tileProtos.Floor();
+                var r;
+
+                if(startx < endx){
+                    for(r = startx; r < endx + 1; r++){
+                        map.tiles[r][starty] = new tileProtos.Floor();
+                    }
+                }else {
+                   for(r = endx; r < startx + 1; r++){
+                        map.tiles[r][endy] = new tileProtos.Floor();
+                    } 
+                }
+                if(starty < endy){
+                    for(r = starty; r < endy + 1; r++){
+                        map.tiles[startx][r] = new tileProtos.Floor();
+                    }
+                }else {
+                   for(r = endy; r < starty + 1; r++){
+                        map.tiles[endx][r] = new tileProtos.Floor();
+                    } 
+                }
+            }
         }
 
         function buildmap() {
