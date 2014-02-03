@@ -1,11 +1,13 @@
 (function () {
-	"use strict";
+	//"use strict";
     var RIGHT_KEY_CODE = 68;
     var LEFT_KEY_CODE = 65;
     var UP_KEY_CODE = 87;
     var DOWN_KEY_CODE = 83;
     //var	KEYCODE_LEFT = 37; //left arrow
     //var	KEYCODE_RIGHT = 39; //right arrow
+
+    var shape = new createjs.Shape();
 
     function MapProto() {
         this.container = new createjs.Container();
@@ -44,17 +46,13 @@
         this.roomWidth = getRandomInt(5,maxWidth);
         this.roomHeight = getRandomInt(5,maxHeight);
 
-        //console.log("roomTLCornerX: "+roomTLCornerX + " roomTLCornerY: " + roomTLCornerY +" width: "+ roomWidth + " height " + roomHeight);
-
         for(var x = 0; x < map.tiles.length; x++){
             for (var y = 0; y < map.tiles[x].length; y++){
                 if (x >= this.roomTLCornerX && x <= this.roomTLCornerX + this.roomWidth && y >= this.roomTLCornerY && y <= this.roomTLCornerY + this.roomHeight ){
-                    //console.log("Outer IF X: " + x + " Y: " + y);
                     if ( x == this.roomTLCornerX || x == this.roomTLCornerX + this.roomWidth || y == this.roomTLCornerY || y == this.roomTLCornerY + this.roomHeight ){
-                        //console.log("Inner IF X: " + x + " Y: " + y);
                         map.tiles[x][y] = new tileProtos.Wall();
                     }else map.tiles[x][y] = new tileProtos.Floor();
-                }//else map.tiles[x][y] = undefined;
+                }
             }
         }
 
@@ -64,15 +62,18 @@
         Floor: function () {
             this.name = "floor";
             this.isPassable = true;
+            this.blocksVision = false;
             this.image = new createjs.Bitmap("sprite_sheets/floor.png");
         },
         Wall: function () {
             this.name = "wall";
             this.isPassable = false;
+            this.blocksVision = true;
             this.image = new createjs.Bitmap("sprite_sheets/wall.png");
         },
         Blank: function () {
             this.name = "thevoid";
+            this.blocksVision = true;
             this.isPassable = false;
             this.image = null;
         }
@@ -95,18 +96,6 @@
         this.keysPressed[LEFT_KEY_CODE] = false;
         this.keysPressed[UP_KEY_CODE] = false;
         this.keysPressed[DOWN_KEY_CODE] = false;
-
-        var currentTile = function (x, y) {
-            var tilex = Math.round(x / 20);
-            var tiley = Math.round(y / 20);
-
-            return {
-                tile: map.tiles[tilex][tiley],
-                x: tilex,
-                y: tiley
-            };  
-            
-        };
 
         this.update = function () {
             var prevX = this.sprite.x;
@@ -143,7 +132,18 @@
                 map.container.x = mapPrevX;
                 map.container.y = mapPrevY;
             }
+
+            var viewshape = new Array();
+            for (var r = 0; r < 360; r+=3)
+                viewshape.push(castARay(this.sprite.x, this.sprite.y, r));
+            
+            shape.graphics = new createjs.Graphics().beginStroke("rgba(255,255,255,1)").moveTo(viewshape[0].x,viewshape[0].y);
+            for(var b = 1; b < viewshape.length; b++)
+                shape.graphics.lineTo(viewshape[b].x,viewshape[b].y);
+            shape.graphics.closePath();
+            //console.log(viewshape);
         };
+
     }
     Actor.prototype = new GameObject();
     Player.prototype = new Actor();
@@ -154,7 +154,7 @@
 
     function game() {
 
-        var stage = new createjs.Stage("gamewindow");
+        stage = new createjs.Stage("gamewindow");
 
         createjs.Ticker.setFPS(60);
         createjs.Ticker.addEventListener('tick', tick);
@@ -177,6 +177,17 @@
         document.addEventListener('keydown', keyDown, false);
         document.addEventListener('keyup', keyUp, false);
 
+        shape = new createjs.Shape();
+        //shape.graphics = new createjs.Graphics().beginStroke("rgba(255,255,255,1)").drawCircle(player.sprite.x+map.container.x+10, player.sprite.y+map.container.y+15, 200).endStroke();
+
+        var translateX = player.sprite.x+map.container.x+10;
+        var translateY = player.sprite.y+map.container.y+15;
+        var testsize = 100;
+
+        //shape.graphics = new createjs.Graphics().beginStroke("rgba(255,255,255,1)").moveTo(translateX-testsize,translateY-testsize).lineTo(translateX-testsize,translateY+testsize).lineTo(translateX+testsize,translateY+testsize).lineTo(translateX+testsize,translateY-testsize).closePath();
+
+        //map.container.mask = shape;
+
         stage.addChild(map.container);
         
 
@@ -195,7 +206,7 @@
                 //map.tiles[endx][endy] = new tileProtos.Floor();
                 var r;
 
-                console.log("values:" + startx +","+starty+" to " + endx + ":" + endy);
+                //console.log("values:" + startx +","+starty+" to " + endx + ":" + endy);
 
                 if(startx < endx){
                     for(r = startx; r <= endx; r++){
@@ -231,10 +242,22 @@
                 }
             }
         }
-
+        var fps = new createjs.Text("FPS: --", "48px Arial", "#F00");
+            fps.x = fps.y = 10;
+            stage.addChild(fps);
         function tick(event) {
 
-
+            for (var r = 0; r <= map.tiles.length; r++) {
+                if (map.tiles[r] !== undefined) {
+                    for (var b = 0; b <= map.tiles[r].length; b++) {
+                        if (map.tiles[r][b] !== undefined) {
+                            map.tiles[r][b].image.alpha = .3;
+                        }
+                    }
+                }
+            }
+            fps.text = "FPS: "+Math.round(createjs.Ticker.getMeasuredFPS());
+            //console.log(createjs.Ticker.getMeasuredFPS());
             player.update();
             stage.update();
         }
@@ -247,5 +270,49 @@
             if (e.keyCode in player.keysPressed) player.keysPressed[e.keyCode] = false;
         }
 
+
     }
+
+    
+
+
+    function castARay(startx, starty, degree){
+        //var degree = direction;
+        var nextX = Math.cos(degree * (Math.PI / 180)) * 2;
+        var nextY = Math.sin(degree * (Math.PI / 180)) * 2;
+        var currX = startx;
+        var currY = starty;
+        var counter = 0;
+        //var viewDist = 50;
+
+
+        while (currentTile(currX,currY).tile !== undefined && counter < 10){
+            currentTile(currX,currY).tile.image.alpha = 1;
+            if (currentTile(currX,currY).tile.blocksVision) counter++;
+            currX += nextX;
+            currY += nextY;
+            if (currY/20 > 50) currY = currY-(currY-(50*20));
+            if (currX < 0) currX = 0;
+
+        }
+        currX += map.container.x;
+        currY += map.container.y;
+
+        return{ x: currX,
+            y: currY};
+
+    }
+    function currentTile(x, y) {
+        var tilex = Math.floor(x / 20);
+        var tiley = Math.floor(y / 20);
+
+
+
+        return {
+            tile: map.tiles[tilex][tiley],
+            x: tilex,
+            y: tiley
+        };  
+        
+    };
 }());
