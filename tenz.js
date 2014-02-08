@@ -120,12 +120,12 @@
                 map.container.y -= 2;
             }
             if (currentTile(this.sprite.x, this.sprite.y).tile !== undefined)
-            if (!currentTile(this.sprite.x, this.sprite.y).tile.isPassable) {
-                this.sprite.x = prevX;
-                this.sprite.y = prevY;
-                map.container.x = mapPrevX;
-                map.container.y = mapPrevY;
-            }
+                if (!currentTile(this.sprite.x, this.sprite.y).tile.isPassable) {
+                    this.sprite.x = prevX;
+                    this.sprite.y = prevY;
+                    map.container.x = mapPrevX;
+                    map.container.y = mapPrevY;
+                }
             if (currentTile(this.sprite.x, this.sprite.y).tile === undefined){
                 this.sprite.x = prevX;
                 this.sprite.y = prevY;
@@ -133,15 +133,31 @@
                 map.container.y = mapPrevY;
             }
 
-            var viewshape = new Array();
-            for (var r = 0; r < 360; r+=3)
-                viewshape.push(castARay(this.sprite.x, this.sprite.y, r));
-            
+            if(currentTile(this.sprite.x, this.sprite.y).x !== currentTile(prevX, prevY).x || currentTile(this.sprite.x, this.sprite.y).y !== currentTile(prevX, prevY).y){
+            //var viewshape = new Array();
+            for (var r = 0; r <= map.tiles.length; r++) {
+                if (map.tiles[r] !== undefined) {
+                    for (var b = 0; b <= map.tiles[r].length; b++) {
+                        if (map.tiles[r][b] !== undefined) {
+                            map.tiles[r][b].image.alpha = .3;
+                        }
+                    }
+                }
+            }
+            //console.log("changed tiles");
+            for (var r = 0; r < 360; r+=3){
+                
+                castARay(this.sprite.x, this.sprite.y, r);
+            }
+               
+       }
+               // viewshape.push(castARay(this.sprite.x, this.sprite.y, r));
+            /*
             shape.graphics = new createjs.Graphics().beginStroke("rgba(255,255,255,1)").moveTo(viewshape[0].x,viewshape[0].y);
             for(var b = 1; b < viewshape.length; b++)
                 shape.graphics.lineTo(viewshape[b].x,viewshape[b].y);
             shape.graphics.closePath();
-            //console.log(viewshape);
+            //console.log(viewshape);*/
         };
 
     }
@@ -187,6 +203,16 @@
         //shape.graphics = new createjs.Graphics().beginStroke("rgba(255,255,255,1)").moveTo(translateX-testsize,translateY-testsize).lineTo(translateX-testsize,translateY+testsize).lineTo(translateX+testsize,translateY+testsize).lineTo(translateX+testsize,translateY-testsize).closePath();
 
         //map.container.mask = shape;
+
+        for (var r = 0; r <= map.tiles.length; r++) {
+                if (map.tiles[r] !== undefined) {
+                    for (var b = 0; b <= map.tiles[r].length; b++) {
+                        if (map.tiles[r][b] !== undefined) {
+                            map.tiles[r][b].image.alpha = .3;
+                        }
+                    }
+                }
+            }
 
         stage.addChild(map.container);
         
@@ -247,15 +273,7 @@
             stage.addChild(fps);
         function tick(event) {
 
-            for (var r = 0; r <= map.tiles.length; r++) {
-                if (map.tiles[r] !== undefined) {
-                    for (var b = 0; b <= map.tiles[r].length; b++) {
-                        if (map.tiles[r][b] !== undefined) {
-                            map.tiles[r][b].image.alpha = .3;
-                        }
-                    }
-                }
-            }
+            
             fps.text = "FPS: "+Math.round(createjs.Ticker.getMeasuredFPS());
             //console.log(createjs.Ticker.getMeasuredFPS());
             player.update();
@@ -278,12 +296,13 @@
 
     function castARay(startx, starty, degree){
         //var degree = direction;
-        var nextX = Math.cos(degree * (Math.PI / 180)) * 2;
-        var nextY = Math.sin(degree * (Math.PI / 180)) * 2;
+        var nextX = Math.cos(degree * (Math.PI / 180));
+        var nextY = Math.sin(degree * (Math.PI / 180));
         var currX = startx;
         var currY = starty;
         var counter = 0;
-        //var viewDist = 50;
+        var viewDist = 210;
+        var currentDist = 0;
 
 
         while (currentTile(currX,currY).tile !== undefined && counter < 10){
@@ -294,14 +313,40 @@
             if (currY/20 > 50) currY = currY-(currY-(50*20));
             if (currX < 0) currX = 0;
 
+            currentDist = Math.sqrt(Math.pow(currX-startx,2)+Math.pow(currY-starty,2));
+            if(currentDist > viewDist) break;
+            
+
         }
         currX += map.container.x;
         currY += map.container.y;
 
-        return{ x: currX,
-            y: currY};
+    }
+
+/*
+    function castARay(startx, starty, degree){
+        var xChange = Math.floor(Math.cos(degree * (Math.PI / 180)));
+        var yChange = Math.floor(Math.sin(degree * (Math.PI / 180)));
+        
+        var currTile = currentTile(startx,starty);
+        currTileX = currTile.x;
+        currTileY = currTile.y;
+        currTile = map.tiles[currTile.x][currTile.y];
+
+        while(currTile !== undefined){
+            currTile.image.alpha = 1;
+            if(currTile.blocksVision) break;
+
+            currTileX += xChange;
+            currTileY += yChange;
+            if(map.tiles[currTileX][currTileY] != undefined)
+            currTile = map.tiles[currTileX][currTileY];
+        //console.log(currTile.x);
+        //console.log(currTile.y);
+        }
 
     }
+    */
     function currentTile(x, y) {
         var tilex = Math.floor(x / 20);
         var tiley = Math.floor(y / 20);
