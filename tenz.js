@@ -4,8 +4,8 @@
     var LEFT_KEY_CODE = 65;
     var UP_KEY_CODE = 87;
     var DOWN_KEY_CODE = 83;
-    //var	KEYCODE_LEFT = 37; //left arrow
-    //var	KEYCODE_RIGHT = 39; //right arrow
+    var	KEYCODE_LEFT = 37; //left arrow
+    var	KEYCODE_RIGHT = 39; //right arrow
 
     function MapProto() {
         this.container = new createjs.Container();
@@ -23,7 +23,7 @@
 
     }
     var map = new MapProto();
-
+    //Returns a random integer
     function getRandomInt(min, max) {
         return Math.floor(Math.random() * (max - min + 1) + min);
     }
@@ -44,17 +44,13 @@
         this.roomWidth = getRandomInt(5,maxWidth);
         this.roomHeight = getRandomInt(5,maxHeight);
 
-        //console.log("roomTLCornerX: "+roomTLCornerX + " roomTLCornerY: " + roomTLCornerY +" width: "+ roomWidth + " height " + roomHeight);
-
         for(var x = 0; x < map.tiles.length; x++){
             for (var y = 0; y < map.tiles[x].length; y++){
                 if (x >= this.roomTLCornerX && x <= this.roomTLCornerX + this.roomWidth && y >= this.roomTLCornerY && y <= this.roomTLCornerY + this.roomHeight ){
-                    //console.log("Outer IF X: " + x + " Y: " + y);
                     if ( x == this.roomTLCornerX || x == this.roomTLCornerX + this.roomWidth || y == this.roomTLCornerY || y == this.roomTLCornerY + this.roomHeight ){
-                        //console.log("Inner IF X: " + x + " Y: " + y);
                         map.tiles[x][y] = new tileProtos.Wall();
                     }else map.tiles[x][y] = new tileProtos.Floor();
-                }//else map.tiles[x][y] = undefined;
+                }
             }
         }
 
@@ -64,15 +60,18 @@
         Floor: function () {
             this.name = "floor";
             this.isPassable = true;
+            this.blocksVision = false;
             this.image = new createjs.Bitmap("sprite_sheets/floor.png");
         },
         Wall: function () {
             this.name = "wall";
             this.isPassable = false;
+            this.blocksVision = true;
             this.image = new createjs.Bitmap("sprite_sheets/wall.png");
         },
         Blank: function () {
             this.name = "thevoid";
+            this.blocksVision = true;
             this.isPassable = false;
             this.image = null;
         }
@@ -95,18 +94,6 @@
         this.keysPressed[LEFT_KEY_CODE] = false;
         this.keysPressed[UP_KEY_CODE] = false;
         this.keysPressed[DOWN_KEY_CODE] = false;
-
-        var currentTile = function (x, y) {
-            var tilex = Math.round(x / 20);
-            var tiley = Math.round(y / 20);
-
-            return {
-                tile: map.tiles[tilex][tiley],
-                x: tilex,
-                y: tiley
-            };  
-            
-        };
 
         this.update = function () {
             var prevX = this.sprite.x;
@@ -131,19 +118,38 @@
                 map.container.y -= 2;
             }
             if (currentTile(this.sprite.x, this.sprite.y).tile !== undefined)
-            if (!currentTile(this.sprite.x, this.sprite.y).tile.isPassable) {
-                this.sprite.x = prevX;
-                this.sprite.y = prevY;
-                map.container.x = mapPrevX;
-                map.container.y = mapPrevY;
-            }
+                if (!currentTile(this.sprite.x, this.sprite.y).tile.isPassable) {
+                    this.sprite.x = prevX;
+                    this.sprite.y = prevY;
+                    map.container.x = mapPrevX;
+                    map.container.y = mapPrevY;
+                }
             if (currentTile(this.sprite.x, this.sprite.y).tile === undefined){
                 this.sprite.x = prevX;
                 this.sprite.y = prevY;
                 map.container.x = mapPrevX;
                 map.container.y = mapPrevY;
             }
+
+            if(currentTile(this.sprite.x, this.sprite.y).x !== currentTile(prevX, prevY).x || currentTile(this.sprite.x, this.sprite.y).y !== currentTile(prevX, prevY).y){
+
+                for (var r = 0; r <= map.tiles.length; r++) {
+                    if (map.tiles[r] !== undefined) {
+                        for (var b = 0; b <= map.tiles[r].length; b++) {
+                            if (map.tiles[r][b] !== undefined) {
+                                map.tiles[r][b].image.alpha = .3;
+                            }
+                        }
+                    }
+                }
+
+                for (var r = 0; r < 360; r+=3){ 
+                    castARay(this.sprite.x, this.sprite.y, r);
+                }
+               
+            }
         };
+
     }
     Actor.prototype = new GameObject();
     Player.prototype = new Actor();
@@ -177,6 +183,20 @@
         document.addEventListener('keydown', keyDown, false);
         document.addEventListener('keyup', keyUp, false);
 
+        var translateX = player.sprite.x+map.container.x+10;
+        var translateY = player.sprite.y+map.container.y+15;
+        var testsize = 100;
+
+        for (var r = 0; r <= map.tiles.length; r++) {
+                if (map.tiles[r] !== undefined) {
+                    for (var b = 0; b <= map.tiles[r].length; b++) {
+                        if (map.tiles[r][b] !== undefined) {
+                            map.tiles[r][b].image.alpha = .3;
+                        }
+                    }
+                }
+            }
+
         stage.addChild(map.container);
         
 
@@ -191,11 +211,7 @@
             makeCorridor(Math.floor(map.rooms[3].roomTLCornerX+map.rooms[3].roomWidth/2),Math.floor(map.rooms[3].roomTLCornerY+map.rooms[3].roomHeight/2),Math.floor(map.rooms[2].roomTLCornerX+map.rooms[2].roomWidth/2),Math.floor(map.rooms[2].roomTLCornerY+map.rooms[2].roomHeight/2));
 
             function makeCorridor(startx,starty,endx,endy){
-                //map.tiles[startx][starty] = new tileProtos.Floor();
-                //map.tiles[endx][endy] = new tileProtos.Floor();
                 var r;
-
-                console.log("values:" + startx +","+starty+" to " + endx + ":" + endy);
 
                 if(startx < endx){
                     for(r = startx; r <= endx; r++){
@@ -231,10 +247,13 @@
                 }
             }
         }
-
+        var fps = new createjs.Text("FPS: --", "48px Arial", "#F00");
+            fps.x = fps.y = 10;
+            stage.addChild(fps);
         function tick(event) {
 
-
+            
+            fps.text = "FPS: "+Math.round(createjs.Ticker.getMeasuredFPS());
             player.update();
             stage.update();
         }
@@ -247,5 +266,49 @@
             if (e.keyCode in player.keysPressed) player.keysPressed[e.keyCode] = false;
         }
 
+
     }
+
+    
+
+//Casts a ray from a given x,y coordinate in a degree and illuminates all touched tiles.
+    function castARay(startx, starty, degree){
+        var nextX = Math.cos(degree * (Math.PI / 180));
+        var nextY = Math.sin(degree * (Math.PI / 180));
+        var currX = startx;
+        var currY = starty;
+        var counter = 0;
+        var viewDist = 210;
+        var currentDist = 0;
+
+
+        while (currentTile(currX,currY).tile !== undefined && counter < 10){
+            currentTile(currX,currY).tile.image.alpha = 1;
+            if (currentTile(currX,currY).tile.blocksVision) counter++;
+            currX += nextX;
+            currY += nextY;
+            if (currY/20 > 50) currY = currY-(currY-(50*20));
+            if (currX < 0) currX = 0;
+
+            currentDist = Math.sqrt(Math.pow(currX-startx,2)+Math.pow(currY-starty,2));
+            if(currentDist > viewDist) break;
+            
+
+        }
+        currX += map.container.x;
+        currY += map.container.y;
+
+    }
+    //Given an x and y value, returns what tile that point is within
+    function currentTile(x, y) {
+        var tilex = Math.floor(x / map.tileSize);
+        var tiley = Math.floor(y / map.tileSize);
+
+        return {
+            tile: map.tiles[tilex][tiley],
+            x: tilex,
+            y: tiley
+        };  
+        
+    };
 }());
