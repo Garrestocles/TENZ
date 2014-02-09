@@ -1,13 +1,11 @@
 (function () {
-	//"use strict";
+	"use strict";
     var RIGHT_KEY_CODE = 68;
     var LEFT_KEY_CODE = 65;
     var UP_KEY_CODE = 87;
     var DOWN_KEY_CODE = 83;
-    //var	KEYCODE_LEFT = 37; //left arrow
-    //var	KEYCODE_RIGHT = 39; //right arrow
-
-    var shape = new createjs.Shape();
+    var	KEYCODE_LEFT = 37; //left arrow
+    var	KEYCODE_RIGHT = 39; //right arrow
 
     function MapProto() {
         this.container = new createjs.Container();
@@ -25,7 +23,7 @@
 
     }
     var map = new MapProto();
-
+    //Returns a random integer
     function getRandomInt(min, max) {
         return Math.floor(Math.random() * (max - min + 1) + min);
     }
@@ -134,30 +132,22 @@
             }
 
             if(currentTile(this.sprite.x, this.sprite.y).x !== currentTile(prevX, prevY).x || currentTile(this.sprite.x, this.sprite.y).y !== currentTile(prevX, prevY).y){
-            //var viewshape = new Array();
-            for (var r = 0; r <= map.tiles.length; r++) {
-                if (map.tiles[r] !== undefined) {
-                    for (var b = 0; b <= map.tiles[r].length; b++) {
-                        if (map.tiles[r][b] !== undefined) {
-                            map.tiles[r][b].image.alpha = .3;
+
+                for (var r = 0; r <= map.tiles.length; r++) {
+                    if (map.tiles[r] !== undefined) {
+                        for (var b = 0; b <= map.tiles[r].length; b++) {
+                            if (map.tiles[r][b] !== undefined) {
+                                map.tiles[r][b].image.alpha = .3;
+                            }
                         }
                     }
                 }
-            }
-            //console.log("changed tiles");
-            for (var r = 0; r < 360; r+=3){
-                
-                castARay(this.sprite.x, this.sprite.y, r);
-            }
+
+                for (var r = 0; r < 360; r+=3){ 
+                    castARay(this.sprite.x, this.sprite.y, r);
+                }
                
-       }
-               // viewshape.push(castARay(this.sprite.x, this.sprite.y, r));
-            /*
-            shape.graphics = new createjs.Graphics().beginStroke("rgba(255,255,255,1)").moveTo(viewshape[0].x,viewshape[0].y);
-            for(var b = 1; b < viewshape.length; b++)
-                shape.graphics.lineTo(viewshape[b].x,viewshape[b].y);
-            shape.graphics.closePath();
-            //console.log(viewshape);*/
+            }
         };
 
     }
@@ -170,7 +160,7 @@
 
     function game() {
 
-        stage = new createjs.Stage("gamewindow");
+        var stage = new createjs.Stage("gamewindow");
 
         createjs.Ticker.setFPS(60);
         createjs.Ticker.addEventListener('tick', tick);
@@ -193,16 +183,9 @@
         document.addEventListener('keydown', keyDown, false);
         document.addEventListener('keyup', keyUp, false);
 
-        shape = new createjs.Shape();
-        //shape.graphics = new createjs.Graphics().beginStroke("rgba(255,255,255,1)").drawCircle(player.sprite.x+map.container.x+10, player.sprite.y+map.container.y+15, 200).endStroke();
-
         var translateX = player.sprite.x+map.container.x+10;
         var translateY = player.sprite.y+map.container.y+15;
         var testsize = 100;
-
-        //shape.graphics = new createjs.Graphics().beginStroke("rgba(255,255,255,1)").moveTo(translateX-testsize,translateY-testsize).lineTo(translateX-testsize,translateY+testsize).lineTo(translateX+testsize,translateY+testsize).lineTo(translateX+testsize,translateY-testsize).closePath();
-
-        //map.container.mask = shape;
 
         for (var r = 0; r <= map.tiles.length; r++) {
                 if (map.tiles[r] !== undefined) {
@@ -228,11 +211,7 @@
             makeCorridor(Math.floor(map.rooms[3].roomTLCornerX+map.rooms[3].roomWidth/2),Math.floor(map.rooms[3].roomTLCornerY+map.rooms[3].roomHeight/2),Math.floor(map.rooms[2].roomTLCornerX+map.rooms[2].roomWidth/2),Math.floor(map.rooms[2].roomTLCornerY+map.rooms[2].roomHeight/2));
 
             function makeCorridor(startx,starty,endx,endy){
-                //map.tiles[startx][starty] = new tileProtos.Floor();
-                //map.tiles[endx][endy] = new tileProtos.Floor();
                 var r;
-
-                //console.log("values:" + startx +","+starty+" to " + endx + ":" + endy);
 
                 if(startx < endx){
                     for(r = startx; r <= endx; r++){
@@ -275,7 +254,6 @@
 
             
             fps.text = "FPS: "+Math.round(createjs.Ticker.getMeasuredFPS());
-            //console.log(createjs.Ticker.getMeasuredFPS());
             player.update();
             stage.update();
         }
@@ -293,9 +271,8 @@
 
     
 
-
+//Casts a ray from a given x,y coordinate in a degree and illuminates all touched tiles.
     function castARay(startx, starty, degree){
-        //var degree = direction;
         var nextX = Math.cos(degree * (Math.PI / 180));
         var nextY = Math.sin(degree * (Math.PI / 180));
         var currX = startx;
@@ -322,36 +299,10 @@
         currY += map.container.y;
 
     }
-
-/*
-    function castARay(startx, starty, degree){
-        var xChange = Math.floor(Math.cos(degree * (Math.PI / 180)));
-        var yChange = Math.floor(Math.sin(degree * (Math.PI / 180)));
-        
-        var currTile = currentTile(startx,starty);
-        currTileX = currTile.x;
-        currTileY = currTile.y;
-        currTile = map.tiles[currTile.x][currTile.y];
-
-        while(currTile !== undefined){
-            currTile.image.alpha = 1;
-            if(currTile.blocksVision) break;
-
-            currTileX += xChange;
-            currTileY += yChange;
-            if(map.tiles[currTileX][currTileY] != undefined)
-            currTile = map.tiles[currTileX][currTileY];
-        //console.log(currTile.x);
-        //console.log(currTile.y);
-        }
-
-    }
-    */
+    //Given an x and y value, returns what tile that point is within
     function currentTile(x, y) {
-        var tilex = Math.floor(x / 20);
-        var tiley = Math.floor(y / 20);
-
-
+        var tilex = Math.floor(x / map.tileSize);
+        var tiley = Math.floor(y / map.tileSize);
 
         return {
             tile: map.tiles[tilex][tiley],
