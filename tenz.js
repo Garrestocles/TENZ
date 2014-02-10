@@ -148,7 +148,12 @@
             
             //check if the player changed which tile was being stood on
             if(currentTile(this.sprite.x, this.sprite.y).x !== currentTile(prevX, prevY).x || currentTile(this.sprite.x, this.sprite.y).y !== currentTile(prevX, prevY).y){
-                //get rid of the currently seen tiles
+                this.fieldOfVision(); 
+            }
+            
+        };
+        this.fieldOfVision = function(){
+            //get rid of the currently seen tiles
                 for (var r = 0; r <= map.tiles.length; r++) {
                     if (map.tiles[r] !== undefined) {
                         for (var b = 0; b <= map.tiles[r].length; b++) {
@@ -160,11 +165,8 @@
                 }
                 //update it with the newly seen tiles
                 for (var r = 0; r < 360; r+=3){ 
-                    castARay(this.sprite.x, this.sprite.y, r);
+                    lineOfSight(this.sprite.x, this.sprite.y, r);
                 }
-               
-            }
-            
         };
 
     }
@@ -191,8 +193,8 @@
         buildmap();
         //Make a player and set initial location
         var player = new Player();
-        player.sprite.x = map.rooms[0].roomTLCornerX*map.tileSize + 30;
-        player.sprite.y = map.rooms[0].roomTLCornerY*map.tileSize + 30;
+        player.sprite.x = map.rooms[0].roomTLCornerX*map.tileSize + 77;
+        player.sprite.y = map.rooms[0].roomTLCornerY*map.tileSize + 77;
         //Add player to the map
         map.container.addChild(player.sprite);
         //Move the map container so that the player is actually on the screen
@@ -209,16 +211,17 @@
 
         //Make the map unseen
         for (var r = 0; r <= map.tiles.length; r++) {
-                if (map.tiles[r] !== undefined) {
-                    for (var b = 0; b <= map.tiles[r].length; b++) {
-                        if (map.tiles[r][b] !== undefined) {
-                            map.tiles[r][b].image.alpha = .3;
-                        }
+            if (map.tiles[r] !== undefined) {
+                for (var b = 0; b <= map.tiles[r].length; b++) {
+                    if (map.tiles[r][b] !== undefined) {
+                        map.tiles[r][b].image.visible = false; //comment out this line to get rid of exploring
+                        map.tiles[r][b].image.alpha = .3;
                     }
                 }
             }
-
-        
+        }
+        //Add Player's initial view
+        player.fieldOfVision();
         //Add the map to the stage
         stage.addChild(map.container);
         
@@ -241,21 +244,38 @@
                 if(startx < endx){
                     for(r = startx; r <= endx; r++){
                         map.tiles[r][starty] = new tileProtos.Floor();
+                        if(map.tiles[r+1][starty+1] === undefined)
+                            map.tiles[r+1][starty+1] = new tileProtos.Wall();
+                        if(map.tiles[r+1][starty-1] === undefined)
+                            map.tiles[r+1][starty-1] = new tileProtos.Wall();
                     }
                 }else {
                    for(r = endx; r <= startx; r++){
                         map.tiles[r][starty] = new tileProtos.Floor();
+                        if(map.tiles[r-1][starty+1] === undefined)
+                            map.tiles[r-1][starty+1] = new tileProtos.Wall();
+                        if(map.tiles[r-1][starty-1] === undefined)
+                            map.tiles[r-1][starty-1] = new tileProtos.Wall();
                     } 
                 }
                 if(starty < endy){
                     for(r = starty; r <= endy; r++){
                         map.tiles[endx][r] = new tileProtos.Floor();
+                        if(map.tiles[endx+1][r-1] === undefined)
+                            map.tiles[endx+1][r-1] = new tileProtos.Wall();
+                        if(map.tiles[endx-1][r-1] === undefined)
+                            map.tiles[endx-1][r-1] = new tileProtos.Wall();
                     }
                 }else {
                    for(r = endy; r <= starty; r++){
                         map.tiles[endx][r] = new tileProtos.Floor();
+                        if(map.tiles[endx+1][r+1] === undefined)
+                            map.tiles[endx+1][r+1] = new tileProtos.Wall();
+                        if(map.tiles[endx-1][r+1] === undefined)
+                            map.tiles[endx-1][r+1] = new tileProtos.Wall();
                     } 
                 }
+
             }
         }
         //Render the tiles described by the map arrays
@@ -273,7 +293,7 @@
             }
         }
         //Set up a FPS counter
-        var fps = new createjs.Text("FPS: --", "48px Arial", "#F00");
+        var fps = new createjs.Text("FPS: --", "24px Arial", "#F00");
             fps.x = fps.y = 10;
             stage.addChild(fps);
         //Main game loop
@@ -301,7 +321,7 @@
     
 
 //Casts a ray from a given x,y coordinate in a degree and illuminates all touched tiles.
-    function castARay(startx, starty, degree){
+    function lineOfSight(startx, starty, degree){
         var nextX = Math.cos(degree * (Math.PI / 180));
         var nextY = Math.sin(degree * (Math.PI / 180));
         var currX = startx;
@@ -313,6 +333,8 @@
 
         while (currentTile(currX,currY).tile !== undefined && counter < 10){
             currentTile(currX,currY).tile.image.alpha = 1;
+            if (!currentTile(currX,currY).tile.image.visible) 
+                currentTile(currX,currY).tile.image.visible = true;
             if (currentTile(currX,currY).tile.blocksVision) counter++;
             currX += nextX;
             currY += nextY;
