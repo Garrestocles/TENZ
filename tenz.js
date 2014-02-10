@@ -103,6 +103,8 @@
         this.keysPressed[LEFT_KEY_CODE] = false;
         this.keysPressed[UP_KEY_CODE] = false;
         this.keysPressed[DOWN_KEY_CODE] = false;
+        //How fast the player can move
+        this.speed = 3;
         //This is run every update of the game loop to carry out the player's will
         this.update = function () {
             //Remember the players current x,y coordinates, in case they try to do something verboten
@@ -110,22 +112,23 @@
             var prevY = this.sprite.y;
             var mapPrevX = map.container.x;
             var mapPrevY = map.container.y;
+
             //Check if a button is pressed and move the player in the correct direction
             if (this.keysPressed[RIGHT_KEY_CODE]){
-               this.sprite.x += 2; 
-               map.container.x -= 2;
+               this.sprite.x += this.speed; 
+               map.container.x -= this.speed;
             } 
             if (this.keysPressed[LEFT_KEY_CODE]){
-                this.sprite.x -= 2;
-                map.container.x += 2;
+                this.sprite.x -= this.speed;
+                map.container.x += this.speed;
             } 
             if (this.keysPressed[UP_KEY_CODE]) {
-                this.sprite.y -= 2;
-                map.container.y += 2;
+                this.sprite.y -= this.speed;
+                map.container.y += this.speed;
             }
             if (this.keysPressed[DOWN_KEY_CODE]) {
-                this.sprite.y += 2;
-                map.container.y -= 2;
+                this.sprite.y += this.speed;
+                map.container.y -= this.speed;
             }
             //check if the player moved somewhere they shouldn't, at which point, move them back
             if (currentTile(this.sprite.x, this.sprite.y).tile !== undefined)
@@ -141,6 +144,8 @@
                 map.container.x = mapPrevX;
                 map.container.y = mapPrevY;
             }
+
+            
             //check if the player changed which tile was being stood on
             if(currentTile(this.sprite.x, this.sprite.y).x !== currentTile(prevX, prevY).x || currentTile(this.sprite.x, this.sprite.y).y !== currentTile(prevX, prevY).y){
                 //get rid of the currently seen tiles
@@ -159,6 +164,7 @@
                 }
                
             }
+            
         };
 
     }
@@ -174,7 +180,7 @@
         //Crreate a stage and bind it to the canvas
         var stage = new createjs.Stage("gamewindow");
         //Set FPS and set function to be called as game loop
-        createjs.Ticker.setFPS(60);
+        createjs.Ticker.setFPS(40);
         createjs.Ticker.addEventListener('tick', tick);
         //Get dimensions of canvas
         var VIEW_WIDTH = parseInt(document.getElementById("gamewindow").getAttributeNode("width").value);
@@ -199,6 +205,8 @@
         //Apparently I didn't actually end up using these...because they seem like decent ideas
         var translateX = player.sprite.x+map.container.x+10;
         var translateY = player.sprite.y+map.container.y+15;
+        
+
         //Make the map unseen
         for (var r = 0; r <= map.tiles.length; r++) {
                 if (map.tiles[r] !== undefined) {
@@ -209,19 +217,23 @@
                     }
                 }
             }
+
+        
         //Add the map to the stage
         stage.addChild(map.container);
         
         //The function that builds the rooms
         function buildmaparray() {
-            //Yeah, yeah this should be dynamic, I'll make it better eventually.
-            map.rooms[0] = new RoomProto();
-            map.rooms[1] = new RoomProto();
-            map.rooms[2] = new RoomProto();
-            map.rooms[3] = new RoomProto();
-            makeCorridor(Math.floor(map.rooms[0].roomTLCornerX+map.rooms[0].roomWidth/2),Math.floor(map.rooms[0].roomTLCornerY+map.rooms[0].roomHeight/2),Math.floor(map.rooms[1].roomTLCornerX+map.rooms[1].roomWidth/2),Math.floor(map.rooms[1].roomTLCornerY+map.rooms[1].roomHeight/2));
-            makeCorridor(Math.floor(map.rooms[1].roomTLCornerX+map.rooms[1].roomWidth/2),Math.floor(map.rooms[1].roomTLCornerY+map.rooms[1].roomHeight/2),Math.floor(map.rooms[2].roomTLCornerX+map.rooms[2].roomWidth/2),Math.floor(map.rooms[2].roomTLCornerY+map.rooms[2].roomHeight/2));
-            makeCorridor(Math.floor(map.rooms[3].roomTLCornerX+map.rooms[3].roomWidth/2),Math.floor(map.rooms[3].roomTLCornerY+map.rooms[3].roomHeight/2),Math.floor(map.rooms[2].roomTLCornerX+map.rooms[2].roomWidth/2),Math.floor(map.rooms[2].roomTLCornerY+map.rooms[2].roomHeight/2));
+            //Randomly decide the number of rooms
+            var numRooms = getRandomInt(7,15);
+            //Make the rooms
+            for (var r=0; r < numRooms; r++)
+                map.rooms[r] = new RoomProto;
+            //Connect the rooms
+            for (var b=1; b < numRooms; b++){
+                makeCorridor(Math.floor(map.rooms[b-1].roomTLCornerX+map.rooms[b-1].roomWidth/2),Math.floor(map.rooms[b-1].roomTLCornerY+map.rooms[b-1].roomHeight/2),Math.floor(map.rooms[b].roomTLCornerX+map.rooms[b].roomWidth/2),Math.floor(map.rooms[b].roomTLCornerY+map.rooms[b].roomHeight/2));
+
+            }
             //Make Corridors between the rooms
             function makeCorridor(startx,starty,endx,endy){
                 var r;
