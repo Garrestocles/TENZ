@@ -11,12 +11,12 @@
         //A container to drop all of the map in
         this.container = new createjs.Container();
         //Number of pixels in the map based on height and width
-        this.width = 2000;
-        this.height = 1000;
+        this.width = 3000;
+        this.height = 2000;
         //arbitrary starting x/y location
         this.container.x = this.container.y = 0;
         //The height and width of tiles.
-        this.tileSize = 20;
+        this.tileSize = 40;
         //A 2d array that will contain all of the actual map tiles
         this.tiles = new Array(this.width / this.tileSize); //currently 100
         for (var i = 0; i <= this.width / this.tileSize; i++)
@@ -42,10 +42,10 @@
         this.roomTLCornerY = getRandomInt(0,map.tiles[0].length-7);
         var maxWidth, maxHeight;
         //Set maximum width and height for the room
-        if(this.roomTLCornerX > map.tiles.length - 26){
+        if(this.roomTLCornerX > map.tiles.length - 30){
             maxWidth = map.tiles.length - this.roomTLCornerX;
         } else maxWidth = 25;
-        if(this.roomTLCornerY > map.tiles[0].length - 26){
+        if(this.roomTLCornerY > map.tiles[0].length - 30){
             maxHeight = map.tiles[0].length - this.roomTLCornerY;
         } else maxHeight = 25;
         //Randomly select a width and height for the room within the given bounds
@@ -94,8 +94,27 @@
     }
     //A prototype for a game object for a player that in theory has some form of intelligencew
     function Player() {
+
+
+        var spritesheetdata ={
+        framerate: 1,
+        images: ["./sprite_sheets/player.png"],
+        frames: {width:40,height:40,count:4,regx:20,regy:20},
+        animations:{
+            standing: 0,
+            down: 0,
+            up: 2,
+            right: 1,
+            left: 3
+        }
+    };
+    var spritesheet = new createjs.SpriteSheet(spritesheetdata);
+
+
+
         //Create a sprite for the player and set the initial x,y coord
-        this.sprite = new createjs.Text("@", "30px Courier", "#FFF");
+        this.sprite = new createjs.Sprite(spritesheet);
+        this.sprite.gotoAndStop("standing");
         this.sprite.x = this.sprite.y = 50;
         //An array for various key presses so that we can tell when the player wants to move about
         this.keysPressed = [];
@@ -104,7 +123,7 @@
         this.keysPressed[UP_KEY_CODE] = false;
         this.keysPressed[DOWN_KEY_CODE] = false;
         //How fast the player can move
-        this.speed = 3;
+        this.speed = 6;
         //This is run every update of the game loop to carry out the player's will
         this.update = function () {
             //Remember the players current x,y coordinates, in case they try to do something verboten
@@ -113,39 +132,46 @@
             var mapPrevX = map.container.x;
             var mapPrevY = map.container.y;
 
+            //this.sprite.gotoAndStop("standing");
+
             //Check if a button is pressed and move the player in the correct direction
-            if (this.keysPressed[RIGHT_KEY_CODE]){
+            if (this.keysPressed[RIGHT_KEY_CODE] && !this.keysPressed[LEFT_KEY_CODE]){
                this.sprite.x += this.speed; 
                map.container.x -= this.speed;
+               //if(this.sprite.currentAnimation == "standing" || this.sprite.currentAnimation == "left")
+               this.sprite.gotoAndPlay("right");
             } 
-            if (this.keysPressed[LEFT_KEY_CODE]){
+            if (this.keysPressed[LEFT_KEY_CODE] && !this.keysPressed[RIGHT_KEY_CODE]){
                 this.sprite.x -= this.speed;
                 map.container.x += this.speed;
+                //if(this.sprite.currentAnimation == "standing" || this.sprite.currentAnimation == "right")
+                this.sprite.gotoAndPlay("left");
             } 
-            if (this.keysPressed[UP_KEY_CODE]) {
+            if (this.keysPressed[UP_KEY_CODE] && !this.keysPressed[DOWN_KEY_CODE]) {
                 this.sprite.y -= this.speed;
                 map.container.y += this.speed;
+                //if(this.sprite.currentAnimation == "standing" || this.sprite.currentAnimation == "down")
+                this.sprite.gotoAndPlay("up");
             }
-            if (this.keysPressed[DOWN_KEY_CODE]) {
+            if (this.keysPressed[DOWN_KEY_CODE] && !this.keysPressed[UP_KEY_CODE]) {
                 this.sprite.y += this.speed;
                 map.container.y -= this.speed;
-            }
+                //if(this.sprite.currentAnimation == "standing" || this.sprite.currentAnimation == "up")
+                this.sprite.gotoAndPlay("down");
+            }/*
+            if (!this.keysPressed[DOWN_KEY_CODE] && !this.keysPressed[UP_KEY_CODE] && !this.keysPressed[LEFT_KEY_CODE] && !this.keysPressed[RIGHT_KEY_CODE])
+                this.sprite.gotoAndStop("standing");
+*/
             //check if the player moved somewhere they shouldn't, at which point, move them back
-            if (currentTile(this.sprite.x, this.sprite.y).tile !== undefined)
-                if (!currentTile(this.sprite.x, this.sprite.y).tile.isPassable) {
+            if (currentTile(this.sprite.x+8, this.sprite.y+20).tile !== undefined)
+                if (!currentTile(this.sprite.x+8, this.sprite.y+20).tile.isPassable) {
                     this.sprite.x = prevX;
                     this.sprite.y = prevY;
                     map.container.x = mapPrevX;
                     map.container.y = mapPrevY;
                 }
-            if (currentTile(this.sprite.x, this.sprite.y).tile === undefined){
-                this.sprite.x = prevX;
-                this.sprite.y = prevY;
-                map.container.x = mapPrevX;
-                map.container.y = mapPrevY;
-            }
 
-            
+            console.log(currentTile(this.sprite.x,this.sprite.y).x+","+currentTile(this.sprite.x,this.sprite.y).y);
             //check if the player changed which tile was being stood on
             if(currentTile(this.sprite.x, this.sprite.y).x !== currentTile(prevX, prevY).x || currentTile(this.sprite.x, this.sprite.y).y !== currentTile(prevX, prevY).y){
                 this.fieldOfVision(); 
@@ -165,7 +191,7 @@
                 }
                 //update it with the newly seen tiles
                 for (var r = 0; r < 360; r+=3){ 
-                    lineOfSight(this.sprite.x, this.sprite.y, r);
+                    lineOfSight(this.sprite.x+8, this.sprite.y+20, r);
                 }
         };
 
@@ -228,7 +254,7 @@
         //The function that builds the rooms
         function buildmaparray() {
             //Randomly decide the number of rooms
-            var numRooms = getRandomInt(7,15);
+            var numRooms = getRandomInt(10,20);
             //Make the rooms
             for (var r=0; r < numRooms; r++)
                 map.rooms[r] = new RoomProto;
@@ -327,7 +353,7 @@
         var currX = startx;
         var currY = starty;
         var counter = 0;
-        var viewDist = 210;
+        var viewDist = 260;
         var currentDist = 0;
 
 
