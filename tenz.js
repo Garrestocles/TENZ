@@ -12,11 +12,11 @@
         this.container = new createjs.Container();
         //Number of pixels in the map based on height and width
         this.width = 3000;
-        this.height = 2000;
+        this.height = 3000;
         //arbitrary starting x/y location
         this.container.x = this.container.y = 0;
         //The height and width of tiles.
-        this.tileSize = 40;
+        this.tileSize = 30;
         //A 2d array that will contain all of the actual map tiles
         this.tiles = new Array(this.width / this.tileSize); //currently 100
         for (var i = 0; i <= this.width / this.tileSize; i++)
@@ -97,18 +97,18 @@
 
 
         var spritesheetdata ={
-        framerate: 1,
-        images: ["./sprite_sheets/player.png"],
-        frames: {width:40,height:40,count:4,regx:20,regy:20},
-        animations:{
-            standing: 0,
-            down: 0,
-            up: 2,
-            right: 1,
-            left: 3
-        }
-    };
-    var spritesheet = new createjs.SpriteSheet(spritesheetdata);
+            framerate: 1,
+            images: ["./sprite_sheets/player.png"],
+            frames: {width:40,height:40,count:4,regx:20,regy:20},
+            animations:{
+                standing: 0,
+                down: 0,
+                up: 2,
+                right: 1,
+                left: 3
+            }
+        };
+        var spritesheet = new createjs.SpriteSheet(spritesheetdata);
 
 
 
@@ -123,7 +123,8 @@
         this.keysPressed[UP_KEY_CODE] = false;
         this.keysPressed[DOWN_KEY_CODE] = false;
         //How fast the player can move
-        this.speed = 6;
+        this.maxSpeed = 6;
+        this.speed = this.maxSpeed;
         //This is run every update of the game loop to carry out the player's will
         this.update = function () {
             //Remember the players current x,y coordinates, in case they try to do something verboten
@@ -133,6 +134,12 @@
             var mapPrevY = map.container.y;
 
             //this.sprite.gotoAndStop("standing");
+
+            if(this.keysPressed[UP_KEY_CODE] || this.keysPressed[DOWN_KEY_CODE]){
+                if(this.keysPressed[LEFT_KEY_CODE] || this.keysPressed[RIGHT_KEY_CODE]){
+                    this.speed = this.maxSpeed - Math.sqrt(this.maxSpeed)/2;//Need to make this better.
+                }else this.speed = this.maxSpeed;
+            }else this.speed = this.maxSpeed;
 
             //Check if a button is pressed and move the player in the correct direction
             if (this.keysPressed[RIGHT_KEY_CODE] && !this.keysPressed[LEFT_KEY_CODE]){
@@ -163,15 +170,14 @@
                 this.sprite.gotoAndStop("standing");
 */
             //check if the player moved somewhere they shouldn't, at which point, move them back
-            if (currentTile(this.sprite.x+8, this.sprite.y+20).tile !== undefined)
-                if (!currentTile(this.sprite.x+8, this.sprite.y+20).tile.isPassable) {
+            if (currentTile(this.sprite.x+20, this.sprite.y+35).tile !== undefined)
+                if (!currentTile(this.sprite.x+20, this.sprite.y+35).tile.isPassable) {
                     this.sprite.x = prevX;
                     this.sprite.y = prevY;
                     map.container.x = mapPrevX;
                     map.container.y = mapPrevY;
                 }
 
-            console.log(currentTile(this.sprite.x,this.sprite.y).x+","+currentTile(this.sprite.x,this.sprite.y).y);
             //check if the player changed which tile was being stood on
             if(currentTile(this.sprite.x, this.sprite.y).x !== currentTile(prevX, prevY).x || currentTile(this.sprite.x, this.sprite.y).y !== currentTile(prevX, prevY).y){
                 this.fieldOfVision(); 
@@ -194,6 +200,69 @@
                     lineOfSight(this.sprite.x+8, this.sprite.y+20, r);
                 }
         };
+
+    }
+    function Pet(){
+
+        var spritesheetdata ={
+            framerate: 1,
+            images: ["./sprite_sheets/Cat.png"],
+            frames: {width:30,height:20,count:4,regx:15,regy:19},
+            animations:{
+                standing: getRandomInt(0,2),
+                down: 0,
+                up: 3,
+                right: 1,
+                left: 2
+            }
+        };
+        var spritesheet = new createjs.SpriteSheet(spritesheetdata);
+
+        var Destination = null;
+
+        
+        this.goingRight = false;
+        this.goingLeft = false;
+        this.goingUp = false;
+        this.goingDown = false;
+
+        //Create a sprite for the player and set the initial x,y coord
+        this.sprite = new createjs.Sprite(spritesheet);
+        this.sprite.gotoAndStop("standing");
+        this.sprite.x = this.sprite.y = 50;
+
+        this.speed = 10;
+
+        function aStar(){
+
+        }
+
+        function isSeen(sprite){
+            if(currentTile(sprite.x,sprite.y).tile.image.alpha == .3)
+                sprite.visible = false;
+            else sprite.visible = true;
+        }
+
+
+
+        this.update = function(){
+            //AI stuff
+            //check to see if the pet has a straight shot
+            /*
+            if(this.Destination === null){
+                var playerTile = currentTile(player.sprite.x, player.sprite.y);
+                if(map.tile[playerTile.x+1][playerTile.y].isPassable)
+                    Destination = {
+                        x: playerTile.x*map.tileSize + map.tileSize/2,
+                        y: playerTile.y*map.tileSize + map.tileSize/2
+                    };
+            }else{
+
+            }
+            */
+            isSeen(this.sprite);
+
+        }
 
     }
     //Establish pecking order
@@ -221,7 +290,12 @@
         var player = new Player();
         player.sprite.x = map.rooms[0].roomTLCornerX*map.tileSize + 77;
         player.sprite.y = map.rooms[0].roomTLCornerY*map.tileSize + 77;
-        //Add player to the map
+        //Make a pet and set initial location
+        var pet = new Pet();
+        pet.sprite.x = player.sprite.x + 77;
+        pet.sprite.y = player.sprite.y + 77;
+        //Add player & pet to the map
+        map.container.addChild(pet.sprite);
         map.container.addChild(player.sprite);
         //Move the map container so that the player is actually on the screen
         map.container.x += Math.floor(VIEW_WIDTH/2) - player.sprite.x - 15;
@@ -319,16 +393,23 @@
             }
         }
         //Set up a FPS counter
-        var fps = new createjs.Text("FPS: --", "24px Arial", "#F00");
+        var fps = new createjs.Text("FPS: --", "20px Arial", "#F00");
             fps.x = fps.y = 10;
             stage.addChild(fps);
+        var ptile = new createjs.Text("Player's Coord: --", "20px Arial", "#F00");
+            ptile.x = 10;
+            ptile.y = 30;
+            stage.addChild(ptile);
         //Main game loop
         function tick(event) {
 
             //Update the FPS counter
             fps.text = "FPS: "+Math.round(createjs.Ticker.getMeasuredFPS());
+            ptile.text = "Player's Coord: "+currentTile(player.sprite.x,player.sprite.y).x+","+currentTile(player.sprite.x,player.sprite.y).y;
             //Update the player
             player.update();
+            //Update the pet
+            pet.update();
             //Redraw the screen
             stage.update();
         }
