@@ -109,9 +109,6 @@
             }
         };
         var spritesheet = new createjs.SpriteSheet(spritesheetdata);
-
-
-
         //Create a sprite for the player and set the initial x,y coord
         this.sprite = new createjs.Sprite(spritesheet);
         this.sprite.gotoAndStop("standing");
@@ -122,11 +119,11 @@
         this.keysPressed[LEFT_KEY_CODE] = false;
         this.keysPressed[UP_KEY_CODE] = false;
         this.keysPressed[DOWN_KEY_CODE] = false;
-        //How fast the player can move
-        this.maxSpeed = 6;
+        //How fast the player can move in pixels/second
+        this.maxSpeed = 170;
         this.speed = this.maxSpeed;
         //This is run every update of the game loop to carry out the player's will
-        this.update = function () {
+        this.update = function (delta) {
             //Remember the players current x,y coordinates, in case they try to do something verboten
             var prevX = this.sprite.x;
             var prevY = this.sprite.y;
@@ -143,32 +140,29 @@
 
             //Check if a button is pressed and move the player in the correct direction
             if (this.keysPressed[RIGHT_KEY_CODE] && !this.keysPressed[LEFT_KEY_CODE]){
-               this.sprite.x += this.speed; 
-               map.container.x -= this.speed;
+               this.sprite.x += (delta)/1000 * this.speed; 
+               map.container.x -= (delta)/1000 * this.speed;
                //if(this.sprite.currentAnimation == "standing" || this.sprite.currentAnimation == "left")
                this.sprite.gotoAndPlay("right");
             } 
             if (this.keysPressed[LEFT_KEY_CODE] && !this.keysPressed[RIGHT_KEY_CODE]){
-                this.sprite.x -= this.speed;
-                map.container.x += this.speed;
+                this.sprite.x -= (delta)/1000 * this.speed;
+                map.container.x += (delta)/1000 * this.speed;
                 //if(this.sprite.currentAnimation == "standing" || this.sprite.currentAnimation == "right")
                 this.sprite.gotoAndPlay("left");
             } 
             if (this.keysPressed[UP_KEY_CODE] && !this.keysPressed[DOWN_KEY_CODE]) {
-                this.sprite.y -= this.speed;
-                map.container.y += this.speed;
+                this.sprite.y -= (delta)/1000 * this.speed;
+                map.container.y += (delta)/1000 * this.speed;
                 //if(this.sprite.currentAnimation == "standing" || this.sprite.currentAnimation == "down")
                 this.sprite.gotoAndPlay("up");
             }
             if (this.keysPressed[DOWN_KEY_CODE] && !this.keysPressed[UP_KEY_CODE]) {
-                this.sprite.y += this.speed;
-                map.container.y -= this.speed;
+                this.sprite.y += (delta)/1000 * this.speed;
+                map.container.y -= (delta)/1000 * this.speed;
                 //if(this.sprite.currentAnimation == "standing" || this.sprite.currentAnimation == "up")
                 this.sprite.gotoAndPlay("down");
-            }/*
-            if (!this.keysPressed[DOWN_KEY_CODE] && !this.keysPressed[UP_KEY_CODE] && !this.keysPressed[LEFT_KEY_CODE] && !this.keysPressed[RIGHT_KEY_CODE])
-                this.sprite.gotoAndStop("standing");
-*/
+            }
             //check if the player moved somewhere they shouldn't, at which point, move them back
             if (currentTile(this.sprite.x+20, this.sprite.y+35).tile !== undefined)
                 if (!currentTile(this.sprite.x+20, this.sprite.y+35).tile.isPassable) {
@@ -276,8 +270,8 @@
     function init() {
         //Crreate a stage and bind it to the canvas
         var stage = new createjs.Stage("gamewindow");
-        //Set FPS and set function to be called as game loop
-        createjs.Ticker.setFPS(40);
+        //Tell it to use requestAnimationFrame API and set function to be called as game loop
+        createjs.Ticker.timingMode = createjs.Ticker.RAF;
         createjs.Ticker.addEventListener('tick', tick);
         //Get dimensions of canvas
         var VIEW_WIDTH = parseInt(document.getElementById("gamewindow").getAttributeNode("width").value);
@@ -407,7 +401,7 @@
             fps.text = "FPS: "+Math.round(createjs.Ticker.getMeasuredFPS());
             ptile.text = "Player's Coord: "+currentTile(player.sprite.x,player.sprite.y).x+","+currentTile(player.sprite.x,player.sprite.y).y;
             //Update the player
-            player.update();
+            player.update(event.delta);
             //Update the pet
             pet.update();
             //Redraw the screen
