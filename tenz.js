@@ -134,7 +134,7 @@
 
             if(this.keysPressed[UP_KEY_CODE] || this.keysPressed[DOWN_KEY_CODE]){
                 if(this.keysPressed[LEFT_KEY_CODE] || this.keysPressed[RIGHT_KEY_CODE]){
-                    this.speed = this.maxSpeed - Math.sqrt(this.maxSpeed)/2;//Need to make this better.
+                    this.speed = Math.sqrt(Math.pow(this.maxSpeed,2)/2);
                 }else this.speed = this.maxSpeed;
             }else this.speed = this.maxSpeed;
 
