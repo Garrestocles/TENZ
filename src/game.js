@@ -1,4 +1,4 @@
-var buildmap = require('./buildmap.js');
+var mapstuff = require('./buildmap.js');
 var gameobj = require('./gameobjects.js');
 
 var RIGHT_KEY_CODE = 68; //letter d
@@ -9,13 +9,13 @@ var KEYCODE_LEFT = 37; //left arrow
 var KEYCODE_RIGHT = 39; //right arrow
 
 document.addEventListener('DOMContentLoaded', function () {
-    init();
+    game();
 });
 //Actually listen for key press events
 document.addEventListener('keydown', keyDown, false);
 document.addEventListener('keyup', keyUp, false);
 
-function init() {
+function game() {
     //Create a stage and bind it to the canvas
     var stage = new createjs.Stage("gamewindow");
 	//Tell it to use requestAnimationFrame API and set function to be called as game loop
@@ -33,6 +33,10 @@ function init() {
     var fps = new createjs.Text("FPS: --", "20px Arial", "#F00");
     fps.x = fps.y = 10;
     stage.addChild(fps);
+
+    var map = mapstuff.generateMap();
+
+    stage.addChild(map.container);
 
     function tick(event) {
 	    //Update the FPS counter
