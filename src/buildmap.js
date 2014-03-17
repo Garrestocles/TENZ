@@ -19,13 +19,17 @@ function MapProto(){
     for (var i = 0; i <= this.width / this.tileSize; i++)
         this.tiles[i] = new Array(this.height / this.tileSize); //currently 50
     this.rooms = [];
+    this.openTiles = [];
     //A function that will tell what tile the given X,Y are in.
     this.getLocation = function(x, y) {  
-    	var tileX = Math.floor(x / map.tileSize);
-        var tileY = Math.floor(y / map.tileSize);
+    	var tileX = Math.floor(x / this.tileSize);
+        var tileY = Math.floor(y / this.tileSize);
 
         return  this.tiles[tileX][tileY];
-	}
+	};
+    this.randomOpenTile = function(){
+        return this.openTiles[utils.getRandomInt(0,this.openTiles.length)];
+    };
 }
 //Prototype for a new room.  Will contain all the data for an individual room.
 function RoomProto(map){
@@ -63,11 +67,12 @@ var TileProtos = {
 	Generic: function(){
 		this.name = "none";
 		this.isPassable = false;
-		this.blockVision = false;
+		this.blocksVision = false;
 		this.image = null;
 		this.mapX;
 		this.mapY;
-		this.surroundingTiles = [];
+		this.neighborTiles = [];
+        this.viewableTiles = [];
 	},
 	Floor: function(){
 		this.name = "floor";
@@ -82,6 +87,8 @@ var TileProtos = {
         this.image = new createjs.Bitmap("sprite_sheets/wall.png");
 	}
 };
+TileProtos.Floor.prototype = new TileProtos.Generic();
+TileProtos.Wall.prototype = new TileProtos.Generic();
 //This is used to connect two points with hallways
 function makeCorridor(map,startx,starty,endx,endy){
 	var r;
@@ -136,6 +143,103 @@ function renderMap(map){
         }
     }
 }
+//This function will fine all of the tile's x & y Coordinates
+function findTileMapCoord(map){
+	var r,b; //iterators
+
+	for(r = 0; r < map.tiles.length; r++){
+		for(b=0; b < map.tiles[r].length; b++){
+			if(map.tiles[r][b] !== undefined){
+				map.tiles[r][b].mapX = r;
+				map.tiles[r][b].mapY = b;
+                map.tiles[r][b].image.alpha = 0;
+
+				if(map.tiles[r][b].isPassable){
+                    map.openTiles.push(map.tiles[r][b]);
+                    //Potentially can calculate this ahead of time, instead of on the fly
+                    //findViewableTiles(map.tiles[r][b],map);
+                }
+					
+			}
+		}
+	}
+}
+//This function will find every valid tile's adjacent tiles to help with AI pathfinding eventually
+function findNeighborTiles(tiles){
+
+}
+//This function is of stuff I haven't figured out a good way to do yet
+//Was going to use to calculate viewable area from each tile on map load rather than on the fly
+function findViewableTiles(povTile,map){
+    var viewDistTiles = 10;
+    var viewDist = viewDistTiles*10;
+    var viewPolygonTiles = [];
+    var viewPolygonPoints = [];
+
+    var viewTLCornerX = povTile.mapX - viewDistTiles;
+    viewTLCornerX = (viewTLCornerX < 0)? 0 : viewTLCornerX;
+    var viewTLCornerY = povTile.mapY - viewDistTiles;
+    viewTLCornerY = (viewTLCornerY < 0)? 0 : viewTLCornerY;
+
+    var lineOfSight = function(povTile,map,degree,viewDist){
+        var nextX = Math.cos(degree * (Math.PI / 180));
+        var nextY = Math.sin(degree * (Math.PI / 180));
+        var currentX = povTile.image.x;
+        var currentY = povTile.image.y;
+        var currentTile = map.getLocation(currentX,currentY);
+        //var counter = 0;
+        //var viewDist = 260;
+        var currentDist = 0;
+        var done = false;
+
+        while(!done){
+            
+            //povTile.viewableTiles.push(currentTile);
+            if(currentTile.blocksVision)
+                return currentTile;
+            currentX += nextX;
+            currentY += nextY;
+            if(map.getLocation(currentX,currentY) === undefined){
+                return currentTile;
+            }else{
+               currentTile = map.getLocation(currentX,currentY); 
+            }
+            currentDist = Math.sqrt(Math.pow(currentX-povTile.image.x,2)+Math.pow(currentY-povTile.image.y,2));
+            if(currentDist > viewDist) 
+                return currentTile;
+
+        }
+    };
+
+    //update it with the newly seen tiles
+    for (var r = 0; r < 360; r++){ 
+        var endTile = lineOfSight(povTile,map, r,viewDist);
+        if (r == 0 || endTile !== viewPolygonTiles[viewPolygonTiles.length-1])
+            viewPolygonTiles.push(endTile);
+    }
+    for (var b = 0; b < viewPolygonTiles.length; b++){
+        viewPolygonPoints.push({x:viewPolygonTiles[b].mapX, y:viewPolygonTiles[b].mapY});
+    }
+    for (var testX = viewTLCornerX; testX < viewTLCornerX+viewDistTiles*2; testX++){
+        for (var testY = viewTLCornerY; testY < viewTLCornerY+viewDistTiles*2; testY++){
+            if(map.tiles[testX][testY] !== undefined){
+               var testPoint = {
+                    x : testX,
+                    y : testY
+                }
+                if(utils.pointInPolygon(viewPolygonPoints, testPoint)){
+                    povTile.viewableTiles.push(map.tiles[testX][testY]);
+                } 
+            }
+            
+
+        }
+    }
+
+    
+    
+
+}
 //This function will take care of all the map generating.
 module.exports.generateMap = function() {
 	var map = new MapProto();
@@ -156,6 +260,10 @@ module.exports.generateMap = function() {
     }
     //Add all these shnazzy new tiles to the map container
     renderMap(map);
+    //Now we find all of the tile's meta data. 
+    findTileMapCoord(map);
+    //Cache the map, once I figure out a way to do that with line of sight
+    //map.container.cache(0,0,map.width,map.height);
     //Send back the shiny new map
     return map;
 };
