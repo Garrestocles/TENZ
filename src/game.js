@@ -29,10 +29,12 @@ function game() {
     var ticks = 0;
 
     var spriteContainer = new createjs.Container();
-
+    //Add the player
     var player = gameObj.createPlayer(map.randomOpenTile(), map.tileSize, spriteContainer,VIEW_WIDTH,VIEW_HEIGHT);
     spriteContainer.addChild(player.sprite);
-
+    //Add a Cat
+    var cat = gameObj.createNPC(map.randomOpenTile(), map.tileSize);
+    spriteContainer.addChild(cat.sprite);
 
     stage.addChild(map.container);
     stage.addChild(spriteContainer);
@@ -100,6 +102,8 @@ function game() {
 	    ptile.text = "Player's Coord: "+player.currentTile.mapX+","+player.currentTile.mapY;
 	    //Update the player
 	    player.update(event.delta, map);
+        //Update the cat
+        cat.update(event.delta, map);
 	    //Redraw the screen
 	    stage.update();
 	}

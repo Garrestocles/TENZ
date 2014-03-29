@@ -157,6 +157,7 @@ function findTileMapCoord(map){
 
 				if(map.tiles[r][b].isPassable){
                     map.openTiles.push(map.tiles[r][b]);
+                    findNeighborTiles(map,r,b);
                     //Potentially can calculate this ahead of time, instead of on the fly
                     //findViewableTiles(map.tiles[r][b],map);
                 }
@@ -166,12 +167,42 @@ function findTileMapCoord(map){
 	}
 }
 //This function will find every valid tile's adjacent tiles to help with AI pathfinding eventually
-function findNeighborTiles(tiles){
+function findNeighborTiles(map,xCoOrd, yCoOrd){
+    var north = yCoOrd - 1;
+    var south = yCoOrd + 1;
+    var east = xCoOrd + 1;
+    var west = xCoOrd - 1;
 
+    
+    if(isValidNeighbor(map.tiles[xCoOrd][south]))
+        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[xCoOrd][south]);
+    if(isValidNeighbor(map.tiles[xCoOrd][north]))
+        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[xCoOrd][north]);
+    if(isValidNeighbor(map.tiles[east][yCoOrd]))
+        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[east][yCoOrd]);
+    if(isValidNeighbor(map.tiles[west][yCoOrd]))
+        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[west][yCoOrd]);
+    if(isValidNeighbor(map.tiles[east][south]))
+        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[east][south]);
+    if(isValidNeighbor(map.tiles[west][south]))
+        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[west][south]);
+    if(isValidNeighbor(map.tiles[east][north]))
+        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[east][north]);
+    if(isValidNeighbor(map.tiles[west][north]))
+        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[west][north]);
+    //return whether current tile is a valid neighbor
+    function isValidNeighbor(currentTile){
+        if(currentTile !== undefined){
+            if(currentTile.isPassable){
+                return true;
+            } else return false;
+        }else return false;
+    }
 }
 //This function is of stuff I haven't figured out a good way to do yet
 //Was going to use to calculate viewable area from each tile on map load rather than on the fly
 function findViewableTiles(povTile,map){
+    /*
     var viewDistTiles = 10;
     var viewDist = viewDistTiles*10;
     var viewPolygonTiles = [];
@@ -238,7 +269,7 @@ function findViewableTiles(povTile,map){
     }
 
     
-    
+*/
 
 }
 //This function will take care of all the map generating.
@@ -300,10 +331,12 @@ function game() {
     var ticks = 0;
 
     var spriteContainer = new createjs.Container();
-
+    //Add the player
     var player = gameObj.createPlayer(map.randomOpenTile(), map.tileSize, spriteContainer,VIEW_WIDTH,VIEW_HEIGHT);
     spriteContainer.addChild(player.sprite);
-
+    //Add a Cat
+    var cat = gameObj.createNPC(map.randomOpenTile(), map.tileSize);
+    spriteContainer.addChild(cat.sprite);
 
     stage.addChild(map.container);
     stage.addChild(spriteContainer);
@@ -371,6 +404,8 @@ function game() {
 	    ptile.text = "Player's Coord: "+player.currentTile.mapX+","+player.currentTile.mapY;
 	    //Update the player
 	    player.update(event.delta, map);
+        //Update the cat
+        cat.update(event.delta, map);
 	    //Redraw the screen
 	    stage.update();
 	}
@@ -379,6 +414,7 @@ function game() {
 
 
 },{"./buildmap.js":1,"./gameobjects.js":3,"./utils.js":4}],3:[function(require,module,exports){
+var utils = require("./utils.js");
 //A prototype for a generic game object (non-topography/tile)
 function GameObject() {
     var spriteSheetData = {};
@@ -425,6 +461,48 @@ function Actor() {
     
 }
 Actor.prototype = new GameObject();
+
+NPC = function(startingTile,mapTileSize){
+
+    var spritesheetdata ={
+        framerate: 1,
+        images: ["./sprite_sheets/Cat.png"],
+        frames: {width:30,height:20,count:4,regx:15,regy:19},
+        animations:{
+            standing: utils.getRandomInt(0,2),
+            down: 0,
+            up: 3,
+            right: 1,
+            left: 2
+        }
+    };
+    var spritesheet = new createjs.SpriteSheet(spritesheetdata);
+
+    //Create a sprite for the player and set the initial x,y coord
+    this.sprite = new createjs.Sprite(spritesheet);
+    this.sprite.gotoAndStop("standing");
+    //Save the size of the tiles
+    var tileSize = mapTileSize;
+    //Set the initial current tile
+    this.currentTile = startingTile;
+    //Set the starting location
+    
+    this.sprite.x = this.currentTile.mapX*tileSize-tileSize/2;
+    this.sprite.y = this.currentTile.mapY*tileSize-tileSize/2;
+    console.log( "The Cat is at " + this.currentTile.mapX+ "," +  this.currentTile.mapY);
+
+
+    this.aStar = function(map){
+
+    }
+
+    this.update = function(delta,map){
+        if(this.currentTile.image.alpha !== 1){
+            this.sprite.visible = false;
+        }else this.sprite.visible = true;
+    }
+
+};
 //A prototype for a game object for the player that in theory has some form of intelligence
 Player = function(startingTile,mapTileSize,spriteContainer,canvasWidth, canvasHeight) {
     spritesheetdata ={
@@ -537,8 +615,11 @@ Player.prototype = new Actor();
 
 module.exports.createPlayer = function(startingTile,mapTileSize,spriteContainer,viewWidth, viewHeight){
     return new Player(startingTile,mapTileSize,spriteContainer,viewWidth, viewHeight);
-}
-},{}],4:[function(require,module,exports){
+};
+module.exports.createNPC = function(startingTile,mapTileSize){
+    return new NPC(startingTile,mapTileSize);
+};
+},{"./utils.js":4}],4:[function(require,module,exports){
 //Get's a randome int
 var getRandomInt = function(min, max) {
     return Math.floor(Math.random() * (max - min + 1) + min);

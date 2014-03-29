@@ -1,3 +1,4 @@
+var utils = require("./utils.js");
 //A prototype for a generic game object (non-topography/tile)
 function GameObject() {
     var spriteSheetData = {};
@@ -44,6 +45,48 @@ function Actor() {
     
 }
 Actor.prototype = new GameObject();
+
+NPC = function(startingTile,mapTileSize){
+
+    var spritesheetdata ={
+        framerate: 1,
+        images: ["./sprite_sheets/Cat.png"],
+        frames: {width:30,height:20,count:4,regx:15,regy:19},
+        animations:{
+            standing: utils.getRandomInt(0,2),
+            down: 0,
+            up: 3,
+            right: 1,
+            left: 2
+        }
+    };
+    var spritesheet = new createjs.SpriteSheet(spritesheetdata);
+
+    //Create a sprite for the player and set the initial x,y coord
+    this.sprite = new createjs.Sprite(spritesheet);
+    this.sprite.gotoAndStop("standing");
+    //Save the size of the tiles
+    var tileSize = mapTileSize;
+    //Set the initial current tile
+    this.currentTile = startingTile;
+    //Set the starting location
+    
+    this.sprite.x = this.currentTile.mapX*tileSize-tileSize/2;
+    this.sprite.y = this.currentTile.mapY*tileSize-tileSize/2;
+    console.log( "The Cat is at " + this.currentTile.mapX+ "," +  this.currentTile.mapY);
+
+
+    this.aStar = function(map){
+
+    }
+
+    this.update = function(delta,map){
+        if(this.currentTile.image.alpha !== 1){
+            this.sprite.visible = false;
+        }else this.sprite.visible = true;
+    }
+
+};
 //A prototype for a game object for the player that in theory has some form of intelligence
 Player = function(startingTile,mapTileSize,spriteContainer,canvasWidth, canvasHeight) {
     spritesheetdata ={
@@ -156,4 +199,7 @@ Player.prototype = new Actor();
 
 module.exports.createPlayer = function(startingTile,mapTileSize,spriteContainer,viewWidth, viewHeight){
     return new Player(startingTile,mapTileSize,spriteContainer,viewWidth, viewHeight);
-}
+};
+module.exports.createNPC = function(startingTile,mapTileSize){
+    return new NPC(startingTile,mapTileSize);
+};

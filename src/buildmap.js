@@ -156,6 +156,7 @@ function findTileMapCoord(map){
 
 				if(map.tiles[r][b].isPassable){
                     map.openTiles.push(map.tiles[r][b]);
+                    findNeighborTiles(map,r,b);
                     //Potentially can calculate this ahead of time, instead of on the fly
                     //findViewableTiles(map.tiles[r][b],map);
                 }
@@ -165,12 +166,42 @@ function findTileMapCoord(map){
 	}
 }
 //This function will find every valid tile's adjacent tiles to help with AI pathfinding eventually
-function findNeighborTiles(tiles){
+function findNeighborTiles(map,xCoOrd, yCoOrd){
+    var north = yCoOrd - 1;
+    var south = yCoOrd + 1;
+    var east = xCoOrd + 1;
+    var west = xCoOrd - 1;
 
+    
+    if(isValidNeighbor(map.tiles[xCoOrd][south]))
+        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[xCoOrd][south]);
+    if(isValidNeighbor(map.tiles[xCoOrd][north]))
+        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[xCoOrd][north]);
+    if(isValidNeighbor(map.tiles[east][yCoOrd]))
+        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[east][yCoOrd]);
+    if(isValidNeighbor(map.tiles[west][yCoOrd]))
+        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[west][yCoOrd]);
+    if(isValidNeighbor(map.tiles[east][south]))
+        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[east][south]);
+    if(isValidNeighbor(map.tiles[west][south]))
+        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[west][south]);
+    if(isValidNeighbor(map.tiles[east][north]))
+        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[east][north]);
+    if(isValidNeighbor(map.tiles[west][north]))
+        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[west][north]);
+    //return whether current tile is a valid neighbor
+    function isValidNeighbor(currentTile){
+        if(currentTile !== undefined){
+            if(currentTile.isPassable){
+                return true;
+            } else return false;
+        }else return false;
+    }
 }
 //This function is of stuff I haven't figured out a good way to do yet
 //Was going to use to calculate viewable area from each tile on map load rather than on the fly
 function findViewableTiles(povTile,map){
+    /*
     var viewDistTiles = 10;
     var viewDist = viewDistTiles*10;
     var viewPolygonTiles = [];
@@ -237,7 +268,7 @@ function findViewableTiles(povTile,map){
     }
 
     
-    
+*/
 
 }
 //This function will take care of all the map generating.
