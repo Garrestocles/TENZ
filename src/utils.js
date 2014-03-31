@@ -1,7 +1,7 @@
 //Get's a randome int
 var getRandomInt = function(min, max) {
     return Math.floor(Math.random() * (max - min + 1) + min);
-}
+};
 //Finds if a given point is within a polygon.
 module.exports.getRandomInt = getRandomInt;
 var pointInPolygon = function(polygonPoints, testPoint){
@@ -19,5 +19,9 @@ var pointInPolygon = function(polygonPoints, testPoint){
 		}
 		b=r;
 	}
-}
+};
 module.exports.pointInPolygon = pointInPolygon;
+var calculateStraightDist = function(startx,starty,endx,endy){
+	return Math.abs(startx-endx) + Math.abs(starty-endy);
+};
+module.exports.calculateStraightDist = calculateStraightDist;

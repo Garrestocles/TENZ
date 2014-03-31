@@ -71,8 +71,12 @@ var TileProtos = {
 		this.image = null;
 		this.mapX;
 		this.mapY;
-		this.neighborTiles = [];
+		this.neighborTiles = {};
         this.viewableTiles = [];
+        this.f = 0;
+        this.g = 0;
+        this.h = 0;
+        this.parentTile;
 	},
 	Floor: function(){
 		this.name = "floor";
@@ -174,21 +178,21 @@ function findNeighborTiles(map,xCoOrd, yCoOrd){
 
     
     if(isValidNeighbor(map.tiles[xCoOrd][south]))
-        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[xCoOrd][south]);
+        map.tiles[xCoOrd][yCoOrd].neighborTiles["south"] = map.tiles[xCoOrd][south];
     if(isValidNeighbor(map.tiles[xCoOrd][north]))
-        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[xCoOrd][north]);
+        map.tiles[xCoOrd][yCoOrd].neighborTiles["north"] = map.tiles[xCoOrd][north];
     if(isValidNeighbor(map.tiles[east][yCoOrd]))
-        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[east][yCoOrd]);
+        map.tiles[xCoOrd][yCoOrd].neighborTiles["east"] = map.tiles[east][yCoOrd];
     if(isValidNeighbor(map.tiles[west][yCoOrd]))
-        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[west][yCoOrd]);
+        map.tiles[xCoOrd][yCoOrd].neighborTiles["west"] = map.tiles[west][yCoOrd];
     if(isValidNeighbor(map.tiles[east][south]))
-        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[east][south]);
+        map.tiles[xCoOrd][yCoOrd].neighborTiles["southeast"] = map.tiles[east][south];
     if(isValidNeighbor(map.tiles[west][south]))
-        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[west][south]);
+        map.tiles[xCoOrd][yCoOrd].neighborTiles["southwest"] = map.tiles[west][south];
     if(isValidNeighbor(map.tiles[east][north]))
-        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[east][north]);
+        map.tiles[xCoOrd][yCoOrd].neighborTiles["northeast"] = map.tiles[east][north];
     if(isValidNeighbor(map.tiles[west][north]))
-        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[west][north]);
+        map.tiles[xCoOrd][yCoOrd].neighborTiles["northwest"] = map.tiles[west][north];
     //return whether current tile is a valid neighbor
     function isValidNeighbor(currentTile){
         if(currentTile !== undefined){

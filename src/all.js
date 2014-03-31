@@ -72,8 +72,12 @@ var TileProtos = {
 		this.image = null;
 		this.mapX;
 		this.mapY;
-		this.neighborTiles = [];
+		this.neighborTiles = {};
         this.viewableTiles = [];
+        this.f = 0;
+        this.g = 0;
+        this.h = 0;
+        this.parentTile;
 	},
 	Floor: function(){
 		this.name = "floor";
@@ -175,21 +179,21 @@ function findNeighborTiles(map,xCoOrd, yCoOrd){
 
     
     if(isValidNeighbor(map.tiles[xCoOrd][south]))
-        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[xCoOrd][south]);
+        map.tiles[xCoOrd][yCoOrd].neighborTiles["south"] = map.tiles[xCoOrd][south];
     if(isValidNeighbor(map.tiles[xCoOrd][north]))
-        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[xCoOrd][north]);
+        map.tiles[xCoOrd][yCoOrd].neighborTiles["north"] = map.tiles[xCoOrd][north];
     if(isValidNeighbor(map.tiles[east][yCoOrd]))
-        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[east][yCoOrd]);
+        map.tiles[xCoOrd][yCoOrd].neighborTiles["east"] = map.tiles[east][yCoOrd];
     if(isValidNeighbor(map.tiles[west][yCoOrd]))
-        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[west][yCoOrd]);
+        map.tiles[xCoOrd][yCoOrd].neighborTiles["west"] = map.tiles[west][yCoOrd];
     if(isValidNeighbor(map.tiles[east][south]))
-        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[east][south]);
+        map.tiles[xCoOrd][yCoOrd].neighborTiles["southeast"] = map.tiles[east][south];
     if(isValidNeighbor(map.tiles[west][south]))
-        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[west][south]);
+        map.tiles[xCoOrd][yCoOrd].neighborTiles["southwest"] = map.tiles[west][south];
     if(isValidNeighbor(map.tiles[east][north]))
-        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[east][north]);
+        map.tiles[xCoOrd][yCoOrd].neighborTiles["northeast"] = map.tiles[east][north];
     if(isValidNeighbor(map.tiles[west][north]))
-        map.tiles[xCoOrd][yCoOrd].neighborTiles.push(map.tiles[west][north]);
+        map.tiles[xCoOrd][yCoOrd].neighborTiles["northwest"] = map.tiles[west][north];
     //return whether current tile is a valid neighbor
     function isValidNeighbor(currentTile){
         if(currentTile !== undefined){
@@ -351,6 +355,8 @@ function game() {
     fps.x = fps.y = 10;
     stage.addChild(fps);
 
+    console.log(map.randomOpenTile().neighborTiles["southeast"]);
+
     //Actually listen for key press events
     document.addEventListener('keydown', keyDown, false);
     document.addEventListener('keyup', keyUp, false);
@@ -486,13 +492,84 @@ NPC = function(startingTile,mapTileSize){
     //Set the initial current tile
     this.currentTile = startingTile;
     //Set the starting location
-    
     this.sprite.x = this.currentTile.mapX*tileSize-tileSize/2;
     this.sprite.y = this.currentTile.mapY*tileSize-tileSize/2;
     console.log( "The Cat is at " + this.currentTile.mapX+ "," +  this.currentTile.mapY);
 
 
-    this.aStar = function(map){
+    this.aStar = function(map, startTile, endTile){
+        var openList = [];
+        var closedList = [];
+        var pathFound = false;
+        var currentTile = startTile;
+
+        currentTile.f = currentTile.g = 0;
+
+        //openList.push(startTile);
+
+        while(!pathFound){
+            
+
+            closedList.push(currentTile); //Add it to the closed list
+
+            for(var neighbor in currentTile.neighborTiles){
+                if(currentTile.neighborTiles[neighbor].isPassable && !isInList(currentTile.neighborTiles[neighbor],closedList)){  //Is it passable and not on the closed list?      
+                    if(isInList(currentTile.neighborTiles[neighbor],openList)){ //Is it in the openlist already?
+                        //Check if this way is faster
+                        var potentialG = calculateG(currentTile.g,neighbor);
+                        if(currentTile.neighborTiles[neighbor].g > potentialG){//Is this path faster?
+                            currentTile.neighborTiles[neighbor].g = potentialG; //Change to faster g
+                            currentTile.neighborTiles[neighbor].f = currentTile.neighborTiles[neighbor].g + currentTile.neighborTiles[neighbor].h; //update f
+                            currentTile.neighborTiles[neighbor].parentTile = currentTile; // update parent
+                        }
+                    }else{// Otherwise calculate scores, add parent, & add to openlist
+                        currentTile.neighborTiles[neighbor].h = utils.calculateStraightDist(currentTile.neighborTiles[neighbor].mapX,currentTile.neighborTiles[neighbor].mapY, endTile.mapX, endTile.mapY);
+                        currentTile.neighborTiles[neighbor].g = calculateG(currentTile.g,neighbor);
+                        currentTile.neighborTiles[neighbor].f = currentTile.neighborTiles[neighbor].g + currentTile.neighborTiles[neighbor].h;
+                        currentTile.neighborTiles[neighbor].parentTile = currentTile;
+                        openList.push(currentTile.neighborTiles[neighbor]);
+                    }     
+                }
+            }
+
+            currentTile = lowestOpenF(openList); //Get open tile with the lowest F scored
+
+            if(currentTile === endTile){
+                pathFound = true;
+            }
+            
+        }
+
+        function calculateG(thisTileG, direction){
+            if(direction === "north" ||
+                direction === "south" ||
+                direction === "east" ||
+                direction === "west"){
+                return thisTileG + 10;
+            }else{
+              return thisTileG + 100;  //putting a huge weight against moving diagnally until I figure out how to deal with corners
+            } 
+        }
+
+        function isInList(subject, list){
+            for(var r = 0; r < list.length; r++){
+                if(subject === list[r]) return true;
+            }
+            return false;
+        }
+
+        function lowestOpenF(openList){
+            var lowest = openList[0];
+            var lowestR = 0;
+            for(var r = 0; r < openList.length; r++){
+                if(lowest.f > openList[r].f){
+                    lowest = openList[r];
+                    lowestR = r;
+                }
+            }
+            openList.splice(lowestR,1);
+            return lowest;
+        }
 
     }
 
@@ -623,7 +700,7 @@ module.exports.createNPC = function(startingTile,mapTileSize){
 //Get's a randome int
 var getRandomInt = function(min, max) {
     return Math.floor(Math.random() * (max - min + 1) + min);
-}
+};
 //Finds if a given point is within a polygon.
 module.exports.getRandomInt = getRandomInt;
 var pointInPolygon = function(polygonPoints, testPoint){
@@ -641,6 +718,10 @@ var pointInPolygon = function(polygonPoints, testPoint){
 		}
 		b=r;
 	}
-}
+};
 module.exports.pointInPolygon = pointInPolygon;
+var calculateStraightDist = function(startx,starty,endx,endy){
+	return Math.abs(startx-endx) + Math.abs(starty-endy);
+};
+module.exports.calculateStraightDist = calculateStraightDist;
 },{}]},{},[2])

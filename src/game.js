@@ -49,6 +49,8 @@ function game() {
     fps.x = fps.y = 10;
     stage.addChild(fps);
 
+    console.log(map.randomOpenTile().neighborTiles["southeast"]);
+
     //Actually listen for key press events
     document.addEventListener('keydown', keyDown, false);
     document.addEventListener('keyup', keyUp, false);
